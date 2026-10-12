@@ -25,10 +25,18 @@ const sections: { id: Section; label: string; icon: 'grid' | 'boxes' | 'history'
   { id: 'perangkat', label: 'Perangkat IoT', icon: 'wifi' },
 ];
 
+type AdminDashboardProps = {
+  onBack?: () => void;
+};
+
 function readLocal<T>(key: string, fallback: T): T {
   try {
     const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) as T : fallback;
+    if (!value) return fallback;
+    const parsed = JSON.parse(value);
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
+    if (typeof fallback === 'object' && fallback !== null && (typeof parsed !== 'object' || parsed === null)) return fallback;
+    return (parsed as T) ?? fallback;
   } catch {
     return fallback;
   }
@@ -48,7 +56,7 @@ function sourceLabel(source: Source) {
   return 'Penyesuaian manual';
 }
 
-function AdminDashboard() {
+function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   const [section, setSection] = useState<Section>('ringkasan');
   const [stocks, setStocks] = useState<Record<string, number>>(() => readInventory());
   const [movements, setMovements] = useState<Movement[]>(() => readLocal(activityKey, []));
@@ -73,14 +81,22 @@ function AdminDashboard() {
   }, [notice]);
 
   const totalStock = products.reduce((total, product) => total + (stocks[product.id] ?? 0), 0);
-  const todayMovements = movements.filter((item) => new Date(item.createdAt).toDateString() === new Date().toDateString());
-  const countedToday = todayMovements.filter((item) => item.source === 'sensor').reduce((total, item) => total + item.delta, 0);
-  const soldToday = todayMovements.filter((item) => item.source === 'shopee').reduce((total, item) => total + Math.abs(item.delta), 0);
+  const safeMovements = Array.isArray(movements) ? movements : [];
+  const todayMovements = safeMovements.filter((item) => {
+    if (!item?.createdAt) return false;
+    try {
+      return new Date(item.createdAt).toDateString() === new Date().toDateString();
+    } catch {
+      return false;
+    }
+  });
+  const countedToday = todayMovements.filter((item) => item.source === 'sensor').reduce((total, item) => total + (item.delta || 0), 0);
+  const soldToday = todayMovements.filter((item) => item.source === 'shopee').reduce((total, item) => total + Math.abs(item.delta || 0), 0);
   const lowStockCount = products.filter((product) => (stocks[product.id] ?? 0) <= 25).length;
-  const recentMovements = movements.slice(0, 5);
+  const recentMovements = safeMovements.slice(0, 5);
   const filteredMovements = useMemo(
-    () => activityFilter === 'semua' ? movements : movements.filter((item) => item.source === activityFilter),
-    [activityFilter, movements],
+    () => activityFilter === 'semua' ? safeMovements : safeMovements.filter((item) => item.source === activityFilter),
+    [activityFilter, safeMovements],
   );
 
   const recordChange = (productId: string, delta: number, source: Source, note: string) => {
@@ -101,7 +117,7 @@ function AdminDashboard() {
       createdAt: new Date().toISOString(),
     };
     setStocks((currentStocks) => ({ ...currentStocks, [productId]: current + delta }));
-    setMovements((currentMovements) => [movement, ...currentMovements].slice(0, 50));
+    setMovements((currentMovements) => [movement, ...(Array.isArray(currentMovements) ? currentMovements : [])].slice(0, 50));
     setNotice(`${product.name}: stok ${delta > 0 ? 'bertambah' : 'berkurang'} ${formatCount(Math.abs(delta))} butir.`);
     return true;
   };
@@ -134,7 +150,17 @@ function AdminDashboard() {
     <div data-theme="dark" className="admin-shell app-shell min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-[1760px]">
         <aside className="hidden w-[260px] shrink-0 flex-col border-r border-white/[.08] px-5 py-6 lg:flex">
-          <a href="/" className="flex items-center gap-3 px-2 text-white" aria-label="Kembali ke Butir Pagi">
+          <a
+            href="/"
+            onClick={(e) => {
+              if (onBack) {
+                e.preventDefault();
+                onBack();
+              }
+            }}
+            className="flex items-center gap-3 px-2 text-white"
+            aria-label="Kembali ke Butir Pagi"
+          >
             <span className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full"><Icon name="egg" size={21} /></span>
             <span><span className="block font-heading text-2xl italic leading-none">Butir Pagi</span><span className="mt-1 block text-[9px] tracking-[.18em] text-white/45">PANEL TOKO</span></span>
           </a>
@@ -158,7 +184,18 @@ function AdminDashboard() {
               <div className="hidden text-xs text-white/45 lg:block">Butir Pagi <span className="px-1.5 text-white/25">/</span> Admin <span className="px-1.5 text-white/25">/</span> <span className="text-white/80">{sections.find((item) => item.id === section)?.label}</span></div>
               <div className="ml-auto flex items-center gap-2">
                 <span className="hidden rounded-full border border-white/10 bg-white/[.04] px-3 py-2 text-[10px] tracking-[.08em] text-white/65 sm:inline-flex">DATA LOKAL</span>
-                <a href="/" className="liquid-glass inline-flex items-center gap-2 rounded-full px-3.5 py-2.5 text-xs text-white/85 transition-colors hover:bg-white/10"><Icon name="arrow-left" size={15} /> <span className="hidden sm:inline">Lihat etalase</span><span className="sm:hidden">Etalase</span></a>
+                <a
+                  href="/"
+                  onClick={(e) => {
+                    if (onBack) {
+                      e.preventDefault();
+                      onBack();
+                    }
+                  }}
+                  className="liquid-glass inline-flex items-center gap-2 rounded-full px-3.5 py-2.5 text-xs text-white/85 transition-colors hover:bg-white/10"
+                >
+                  <Icon name="arrow-left" size={15} /> <span className="hidden sm:inline">Lihat etalase</span><span className="sm:hidden">Etalase</span>
+                </a>
               </div>
             </div>
             <nav aria-label="Navigasi admin seluler" className="mx-auto mt-3 flex max-w-[1480px] gap-1 overflow-x-auto pb-0.5 lg:hidden">{navButtons(true)}</nav>

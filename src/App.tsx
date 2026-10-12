@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import { BlurText } from './components/BlurText';
 import { FarmVideoBackground } from './components/FarmVideoBackground';
@@ -117,7 +117,7 @@ function useCloseOnEscape(close: () => void, isOpen: boolean) {
   }, [close, isOpen]);
 }
 
-function Storefront() {
+function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const heroProduct = products[0];
@@ -273,6 +273,16 @@ function Storefront() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={onNavigateAdmin}
+                className="liquid-glass inline-flex h-12 items-center gap-1.5 rounded-full px-3.5 text-xs text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                title="Buka Panel Admin Toko"
+              >
+                <Icon name="boxes" size={16} />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { setCartOpen(true); setMobileMenuOpen(false); }}
                 className="liquid-glass inline-flex h-12 items-center gap-2.5 rounded-full px-4 text-sm font-medium transition-colors hover:bg-white/10"
                 aria-label={`Buka keranjang belanja, ${cartCount} pesanan`}
@@ -312,6 +322,17 @@ function Storefront() {
                 <a className="mobile-nav-link" href="#cara-pesan" onClick={() => setMobileMenuOpen(false)}>Cara Pesan</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onNavigateAdmin();
+                  }}
+                  className="mobile-nav-link flex items-center justify-between text-left text-emerald-300"
+                >
+                  <span>Panel Admin (Kelola Stok)</span>
+                  <Icon name="arrow-right" size={14} />
+                </button>
               </motion.nav>
             )}
           </AnimatePresence>
@@ -834,9 +855,13 @@ function Storefront() {
             <div className="flex items-center gap-2">
               <span>© {new Date().getFullYear()} Butir Pagi · Fian's Farm</span>
               <span>·</span>
-              <a href="/admin" className="text-white/35 transition-colors hover:text-white">
+              <button
+                type="button"
+                onClick={onNavigateAdmin}
+                className="text-white/40 transition-colors hover:text-white"
+              >
                 Panel Admin
-              </a>
+              </button>
             </div>
             <p>Pemesanan, konfirmasi stok, dan ongkir diselesaikan via WhatsApp atau Shopee.</p>
           </div>
@@ -1259,29 +1284,130 @@ function CheckoutDialog({ step, lines, totalEggs, subtotal, shopeeUrl, onClose, 
   );
 }
 
+function isAdminRoute(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = (window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
+  const hash = (window.location.hash || '').toLowerCase();
+  const search = (window.location.search || '').toLowerCase();
+  return (
+    path === '/admin' ||
+    path.endsWith('/admin') ||
+    hash === '#admin' ||
+    hash === '#/admin' ||
+    hash.startsWith('#admin') ||
+    hash.startsWith('#/admin') ||
+    search.includes('admin')
+  );
+}
+
+type AdminErrorBoundaryProps = {
+  children: React.ReactNode;
+  onReset: () => void;
+};
+
+type AdminErrorBoundaryState = {
+  hasError: boolean;
+  error?: Error;
+};
+
+class AdminErrorBoundary extends React.Component<AdminErrorBoundaryProps, AdminErrorBoundaryState> {
+  constructor(props: AdminErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): AdminErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('AdminDashboard error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#050706] p-6 text-center text-white">
+          <div className="liquid-glass-strong max-w-md rounded-3xl p-8">
+            <h2 className="font-heading text-3xl italic text-red-300">Terjadi Kendala di Panel Admin</h2>
+            <p className="mt-3 text-xs leading-relaxed text-white/60">
+              {this.state.error?.message || 'Data lokal di browser mungkin perlu diperbarui.'}
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('butir-pagi-admin-activity-v2');
+                  } catch {}
+                  window.location.reload();
+                }}
+                className="liquid-glass-strong rounded-full py-3 text-xs font-medium text-white hover:bg-white/15"
+              >
+                Segarkan & Reset Riwayat
+              </button>
+              <button
+                type="button"
+                onClick={this.props.onReset}
+                className="rounded-full border border-white/15 py-2.5 text-xs text-white/70 hover:bg-white/5 hover:text-white"
+              >
+                Kembali ke Beranda
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
-  const [pathname, setPathname] = useState(() => {
-    if (typeof window === 'undefined') return '/';
-    return window.location.pathname.replace(/\/+$/, '') || '/';
-  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => isAdminRoute());
 
   useEffect(() => {
-    const onLocationChange = () => {
-      setPathname(window.location.pathname.replace(/\/+$/, '') || '/');
+    const handleUrlChange = () => {
+      setIsAdmin(isAdminRoute());
     };
-    window.addEventListener('popstate', onLocationChange);
-    return () => window.removeEventListener('popstate', onLocationChange);
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
   }, []);
 
-  if (pathname === '/admin') {
+  const goToAdmin = () => {
+    try {
+      window.history.pushState({}, '', '/admin');
+    } catch {
+      window.location.hash = 'admin';
+    }
+    setIsAdmin(true);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const goToStorefront = () => {
+    try {
+      window.history.pushState({}, '', '/');
+    } catch {
+      window.location.hash = '';
+    }
+    setIsAdmin(false);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  if (isAdmin) {
     return (
-      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#050706] text-sm text-white/70">Memuat Panel Admin...</div>}>
-        <AdminDashboard />
-      </Suspense>
+      <AdminErrorBoundary onReset={goToStorefront}>
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#050706] text-sm text-white/70">Memuat Panel Admin...</div>}>
+          <AdminDashboard onBack={goToStorefront} />
+        </Suspense>
+      </AdminErrorBoundary>
     );
   }
 
-  return <Storefront />;
+  return <Storefront onNavigateAdmin={goToAdmin} />;
 }
 
 export default App;

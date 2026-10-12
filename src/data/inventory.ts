@@ -12,7 +12,10 @@ export function readInventory(): Record<string, number> {
       localStorage.setItem(inventoryStorageKey, JSON.stringify(defaultStocks));
       return defaultStocks;
     }
-    const parsed = JSON.parse(raw) as Record<string, number>;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return defaultStocks;
+    }
     return { ...defaultStocks, ...parsed };
   } catch {
     return defaultStocks;
