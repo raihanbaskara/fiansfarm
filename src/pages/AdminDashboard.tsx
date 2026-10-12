@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '../components/Icon';
 import { products } from '../data/products';
-import { inventoryStorageKey, inventoryUpdateEvent } from '../data/inventory';
+import { inventoryStorageKey, inventoryUpdateEvent, readInventory } from '../data/inventory';
 
 type Section = 'ringkasan' | 'stok' | 'aktivitas' | 'perangkat';
 type Source = 'sensor' | 'shopee' | 'manual';
@@ -17,9 +17,6 @@ type Movement = {
 };
 
 const activityKey = 'butir-pagi-admin-activity-v2';
-const defaultStocks: Record<string, number> = {
-  'telur-ayam-kampung': 0,
-};
 
 const sections: { id: Section; label: string; icon: 'grid' | 'boxes' | 'history' | 'wifi' }[] = [
   { id: 'ringkasan', label: 'Ringkasan', icon: 'grid' },
@@ -53,7 +50,7 @@ function sourceLabel(source: Source) {
 
 function AdminDashboard() {
   const [section, setSection] = useState<Section>('ringkasan');
-  const [stocks, setStocks] = useState<Record<string, number>>(() => readLocal(inventoryStorageKey, defaultStocks));
+  const [stocks, setStocks] = useState<Record<string, number>>(() => readInventory());
   const [movements, setMovements] = useState<Movement[]>(() => readLocal(activityKey, []));
   const [saleProduct, setSaleProduct] = useState(products[0]?.id ?? '');
   const [saleQuantity, setSaleQuantity] = useState('1');
@@ -333,5 +330,6 @@ function DeviceInfo({ label, value }: { label: string; value: string }) {
 }
 
 export { AdminDashboard };
+export default AdminDashboard;
 
 

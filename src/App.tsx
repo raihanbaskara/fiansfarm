@@ -6,8 +6,10 @@ import { Icon } from './components/Icon';
 import { products } from './data/products';
 import { eggPackages } from './data/packages';
 import type { EggPackage } from './data/packages';
+import { inventoryUpdateEvent, readInventory } from './data/inventory';
 
 const StorefrontScrollMotion = lazy(() => import('./components/StorefrontScrollMotion'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const heroVideo = '/videos/farm-wide.mp4';
 const collectionVideo = '/videos/farm-close.mp4';
@@ -120,6 +122,7 @@ function Storefront() {
   const rootRef = useRef<HTMLDivElement>(null);
   const heroProduct = products[0];
 
+  const [stocks, setStocks] = useState<Record<string, number>>(() => readInventory());
   const [cartItems, setCartItems] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>(null);
@@ -127,6 +130,17 @@ function Storefront() {
   const [announcement, setAnnouncement] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
+  useEffect(() => {
+    const refreshInventory = () => setStocks(readInventory());
+    window.addEventListener('storage', refreshInventory);
+    window.addEventListener(inventoryUpdateEvent, refreshInventory);
+    return () => {
+      window.removeEventListener('storage', refreshInventory);
+      window.removeEventListener(inventoryUpdateEvent, refreshInventory);
+    };
+  }, []);
+
+  const currentStock = stocks[heroProduct.id] ?? 0;
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalEggsInCart = cartItems.reduce((sum, item) => sum + item.eggsCount * item.quantity, 0);
   const subtotal = cartItems.reduce((sum, item) => sum + item.pricePerUnit * item.quantity, 0);
@@ -151,6 +165,14 @@ function Storefront() {
   }, [announcement]);
 
   const addPackageToCart = (pkg: EggPackage) => {
+    if (currentStock <= 0) {
+      setAnnouncement('Maaf, persediaan telur hari ini telah habis.');
+      return;
+    }
+    if (totalEggsInCart + pkg.count > currentStock) {
+      setAnnouncement(`Jumlah melebihi stok siap kirim (${currentStock} butir).`);
+      return;
+    }
     setCartItems((current) => {
       const existing = current.find((line) => line.productId === heroProduct.id && line.variant === pkg.name);
       if (existing) {
@@ -169,6 +191,14 @@ function Storefront() {
 
   const addCustomEggsToCart = (count = 1) => {
     const variantName = 'Beli Satuan Kustom';
+    if (currentStock <= 0) {
+      setAnnouncement('Maaf, persediaan telur hari ini telah habis.');
+      return;
+    }
+    if (totalEggsInCart + count > currentStock) {
+      setAnnouncement(`Jumlah melebihi stok siap kirim (${currentStock} butir).`);
+      return;
+    }
 
     setCartItems((current) => {
       const existing = current.find((line) => line.productId === heroProduct.id && line.variant === variantName);
@@ -187,6 +217,13 @@ function Storefront() {
   };
 
   const updateQuantity = (variant: string, change: number) => {
+    if (change > 0) {
+      const line = cartItems.find((l) => l.variant === variant);
+      if (line && totalEggsInCart + line.eggsCount > currentStock) {
+        setAnnouncement(`Stok tidak mencukupi (tersedia ${currentStock} butir).`);
+        return;
+      }
+    }
     setCartItems((current) => current
       .map((line) => line.variant === variant ? { ...line, quantity: line.quantity + change } : line)
       .filter((line) => line.quantity > 0));
@@ -287,11 +324,19 @@ function Storefront() {
             <div className="hero-shade absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-[#050706]" />
 
             <div className="relative z-10 mx-auto flex flex-1 max-w-[1400px] flex-col items-center justify-center px-4 pb-16 pt-32 text-center sm:px-8 sm:pt-36">
-              <motion.div {...reveal(0.15, Boolean(reduceMotion))} className="liquid-glass inline-flex items-center gap-2.5 rounded-full p-1.5 pr-4 text-[11px] tracking-[.14em] text-white/90 sm:text-xs">
+              <motion.div {...reveal(0.15, Boolean(reduceMotion))} className="liquid-glass inline-flex flex-wrap items-center justify-center gap-2 rounded-full p-1.5 px-4 text-[11px] tracking-[.14em] text-white/90 sm:text-xs">
                 <span className="flex h-5 items-center justify-center rounded-full bg-[#cbd2b3] px-2.5 text-[10px] font-bold tracking-[.12em] text-[#050706]">
                   FIAN'S FARM
                 </span>
-                <span>Telur Ayam Kampung Asli · Panen Segar Harian</span>
+                <span>Telur Ayam Kampung Asli</span>
+                <span className="text-white/30">·</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-300 font-medium">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  </span>
+                  Stok: {new Intl.NumberFormat('id-ID').format(currentStock)} Butir Siap Kirim
+                </span>
               </motion.div>
 
               <h1 className="mt-8 max-w-5xl font-heading text-[clamp(3.2rem,8.5vw,7.6rem)] italic leading-[.85] tracking-tight text-white">
@@ -324,7 +369,7 @@ function Storefront() {
                 </a>
               </motion.div>
 
-              <motion.div {...reveal(1.05, Boolean(reduceMotion))} className="mt-12 grid w-full max-w-4xl grid-cols-1 gap-3 text-left sm:grid-cols-3 sm:gap-4">
+              <motion.div {...reveal(1.05, Boolean(reduceMotion))} className="mt-12 grid w-full max-w-5xl grid-cols-2 gap-3 text-left lg:grid-cols-4 sm:gap-4">
                 <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] tracking-[.16em] text-white/45">HARGA PER BUTIR</span>
@@ -336,11 +381,25 @@ function Storefront() {
 
                 <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
                   <div className="flex items-center justify-between">
+                    <span className="text-[10px] tracking-[.16em] text-white/45">STOK HARI INI</span>
+                    <span className="text-emerald-300"><Icon name="boxes" size={18} /></span>
+                  </div>
+                  <p className="mt-3 font-heading text-3xl italic leading-none text-emerald-300">
+                    {new Intl.NumberFormat('id-ID').format(currentStock)} <span className="font-body text-xs not-italic text-white/60">butir</span>
+                  </p>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-light text-emerald-200/80">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    {currentStock > 0 ? 'Tersedia & Siap Kirim' : 'Stok habis hari ini'}
+                  </p>
+                </div>
+
+                <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
+                  <div className="flex items-center justify-between">
                     <span className="text-[10px] tracking-[.16em] text-white/45">PAKAN ALAMI 100%</span>
                     <span className="text-emerald-300"><Icon name="sparkle" size={18} /></span>
                   </div>
                   <p className="mt-3 font-heading text-3xl italic leading-none text-white">Free-Range</p>
-                  <p className="mt-1.5 text-[11px] font-light text-white/60">Dedak padi, jagung giling & maggot BSF</p>
+                  <p className="mt-1.5 text-[11px] font-light text-white/60">Dedak padi, jagung & maggot BSF</p>
                 </div>
 
                 <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
@@ -367,6 +426,15 @@ function Storefront() {
                   <h2 className="mt-2 font-heading text-4xl italic leading-none sm:text-5xl md:text-6xl">
                     Pilih Jumlah Butir atau Paket Siap Simpan.
                   </h2>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-1.5 text-xs text-emerald-300">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                    </span>
+                    <span>
+                      Stok Siap Kirim Hari Ini: <strong className="font-semibold text-white">{new Intl.NumberFormat('id-ID').format(currentStock)} Butir</strong>
+                    </span>
+                  </div>
                 </div>
                 <div data-scroll-velocity className="scroll-velocity-mark max-w-md text-xs font-light leading-relaxed text-white/65">
                   Tentukan jumlah butir satuan bebas sesuai kebutuhan, atau pilih kotak 10 butir dan tray keluarga 30 butir yang paling hemat.
@@ -388,7 +456,10 @@ function Storefront() {
                           <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
                             SATUAN BEBAS
                           </span>
-                          <span className="text-xs text-white/45">Mulai 1 Butir</span>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            Stok: {new Intl.NumberFormat('id-ID').format(currentStock)} butir
+                          </span>
                         </div>
 
                         {/* Gambar Produk */}
@@ -432,9 +503,10 @@ function Storefront() {
                         <button
                           type="button"
                           onClick={() => addCustomEggsToCart(1)}
-                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95"
+                          disabled={currentStock <= 0}
+                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <Icon name="bag" size={15} /> Tambahkan ke Keranjang
+                          <Icon name="bag" size={15} /> {currentStock > 0 ? 'Tambahkan ke Keranjang' : 'Stok Habis'}
                         </button>
                       </div>
                     </article>
@@ -458,7 +530,12 @@ function Storefront() {
                           <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
                             {pkg.badge}
                           </span>
-                          <span className="text-xs text-white/45">{pkg.count} Butir</span>
+                          <div className="text-right">
+                            <span className="block text-xs text-white/70">{pkg.count} Butir</span>
+                            <span className="block text-[10px] text-emerald-300">
+                              Tersedia {Math.floor(currentStock / pkg.count)} {pkg.id === 'pack-10' ? 'kotak' : 'tray'}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
@@ -499,9 +576,10 @@ function Storefront() {
                         <button
                           type="button"
                           onClick={() => addPackageToCart(pkg)}
-                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95"
+                          disabled={currentStock < pkg.count}
+                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <Icon name="bag" size={15} /> Tambahkan ke Keranjang
+                          <Icon name="bag" size={15} /> {currentStock >= pkg.count ? 'Tambahkan ke Keranjang' : 'Stok Tidak Cukup'}
                         </button>
                       </div>
                     </article>
@@ -753,7 +831,13 @@ function Storefront() {
             </div>
           </div>
           <div className="mx-auto mt-10 flex max-w-[1480px] flex-col gap-2 border-t border-white/[.06] pt-5 text-[10px] text-white/40 sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} Butir Pagi · Fian's Farm</p>
+            <div className="flex items-center gap-2">
+              <span>© {new Date().getFullYear()} Butir Pagi · Fian's Farm</span>
+              <span>·</span>
+              <a href="/admin" className="text-white/35 transition-colors hover:text-white">
+                Panel Admin
+              </a>
+            </div>
             <p>Pemesanan, konfirmasi stok, dan ongkir diselesaikan via WhatsApp atau Shopee.</p>
           </div>
         </footer>
@@ -1176,6 +1260,27 @@ function CheckoutDialog({ step, lines, totalEggs, subtotal, shopeeUrl, onClose, 
 }
 
 function App() {
+  const [pathname, setPathname] = useState(() => {
+    if (typeof window === 'undefined') return '/';
+    return window.location.pathname.replace(/\/+$/, '') || '/';
+  });
+
+  useEffect(() => {
+    const onLocationChange = () => {
+      setPathname(window.location.pathname.replace(/\/+$/, '') || '/');
+    };
+    window.addEventListener('popstate', onLocationChange);
+    return () => window.removeEventListener('popstate', onLocationChange);
+  }, []);
+
+  if (pathname === '/admin') {
+    return (
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#050706] text-sm text-white/70">Memuat Panel Admin...</div>}>
+        <AdminDashboard />
+      </Suspense>
+    );
+  }
+
   return <Storefront />;
 }
 
