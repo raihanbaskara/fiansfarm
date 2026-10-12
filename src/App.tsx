@@ -403,13 +403,12 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] tracking-[.16em] text-white/45">STOK HARI INI</span>
-                    <span className="text-emerald-300"><Icon name="boxes" size={18} /></span>
+                    <span className="text-white/60"><Icon name="boxes" size={18} /></span>
                   </div>
-                  <p className="mt-3 font-heading text-3xl italic leading-none text-emerald-300">
+                  <p className="mt-3 font-heading text-3xl italic leading-none text-white">
                     {new Intl.NumberFormat('id-ID').format(currentStock)} <span className="font-body text-xs not-italic text-white/60">butir</span>
                   </p>
-                  <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-light text-emerald-200/80">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  <p className="mt-1.5 text-[11px] font-light text-white/60">
                     {currentStock > 0 ? 'Tersedia & Siap Kirim' : 'Stok habis hari ini'}
                   </p>
                 </div>
@@ -447,15 +446,6 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                   <h2 className="mt-2 font-heading text-4xl italic leading-none sm:text-5xl md:text-6xl">
                     Untuk Meja Sehari-hari.
                   </h2>
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-1.5 text-xs text-emerald-300">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                    </span>
-                    <span>
-                      Stok Siap Kirim Hari Ini: <strong className="font-semibold text-white">{new Intl.NumberFormat('id-ID').format(currentStock)} Butir</strong>
-                    </span>
-                  </div>
                 </div>
                 <div data-scroll-velocity className="scroll-velocity-mark max-w-md text-xs font-light leading-relaxed text-white/65">
                   Telur Ayam Kampung Asli mitra Fian's Farm (Kabupaten Pasuruan). Pilih jumlah butir satuan bebas, kotak praktis 10 butir, atau tray keluarga 30 butir.
@@ -471,9 +461,8 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 const offerings = [
                   {
                     id: 'satuan-kustom',
-                    code: 'KAMPUNG 01 · AYAM KAMPUNG',
                     name: 'Beli Satuan Kustom',
-                    image: '/images/products/ayam-kampung.webp',
+                    image: heroProduct.image,
                     priceText: formatPrice(heroProduct.price),
                     unitText: '@ Rp2.500 / butir',
                     badge: 'PILIHAN',
@@ -484,26 +473,24 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                   },
                   {
                     id: 'pack-10',
-                    code: 'KAMPUNG 02 · AYAM KAMPUNG',
                     name: 'Kotak Segar 10 Butir',
-                    image: '/images/products/ayam-negeri.webp',
+                    image: heroProduct.image,
                     priceText: formatPrice(eggPackages[0].price),
                     unitText: '10 butir / kotak',
                     badge: 'PILIHAN',
-                    stockText: currentStock >= 10 ? `Tersedia ${Math.floor(currentStock / 10)} kotak (${new Intl.NumberFormat('id-ID').format(currentStock)} butir)` : 'Stok menipis',
+                    stockText: currentStock >= 10 ? `Tersedia ${Math.floor(currentStock / 10)} kotak` : 'Stok habis',
                     isAvailable: currentStock >= 10,
                     inCartLabel: pack10InCart ? `${pack10InCart.quantity} kotak (${pack10InCart.quantity * 10} butir)` : null,
                     onAdd: () => addPackageToCart(eggPackages[0]),
                   },
                   {
                     id: 'tray-30',
-                    code: 'KAMPUNG 03 · AYAM KAMPUNG',
                     name: 'Tray Keluarga 30 Butir',
-                    image: '/images/products/puyuh.webp',
+                    image: heroProduct.image,
                     priceText: formatPrice(eggPackages[1].price),
                     unitText: '30 butir / tray',
                     badge: 'PILIHAN',
-                    stockText: currentStock >= 30 ? `Tersedia ${Math.floor(currentStock / 30)} tray (${new Intl.NumberFormat('id-ID').format(currentStock)} butir)` : 'Stok menipis',
+                    stockText: currentStock >= 30 ? `Tersedia ${Math.floor(currentStock / 30)} tray` : 'Stok habis',
                     isAvailable: currentStock >= 30,
                     inCartLabel: tray30InCart ? `${tray30InCart.quantity} tray (${tray30InCart.quantity * 30} butir)` : null,
                     onAdd: () => addPackageToCart(eggPackages[1]),
@@ -545,22 +532,18 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                         {/* DETAIL & TYPOGRAPHY ELEGAN */}
                         <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
                           <div className="min-w-0 flex-1">
-                            <span className="block text-[9px] tracking-[.14em] text-white/50 uppercase">
-                              {item.code}
-                            </span>
-                            <h3 className="mt-1 font-heading text-2xl italic leading-none tracking-tight text-white sm:text-[26px]">
+                            <h3 className="font-heading text-2xl italic leading-none tracking-tight text-white sm:text-[26px]">
                               {item.name}
                             </h3>
                             <div className="mt-2 flex items-baseline gap-2">
                               <span className="text-xs font-medium text-white/85">{item.priceText}</span>
                               <span className="text-[10px] text-white/40">({item.unitText})</span>
                             </div>
-                            <span className={`mt-1.5 flex items-center gap-1.5 text-[11px] ${item.isAvailable ? 'text-emerald-300' : 'text-amber-200/80'}`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${item.isAvailable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                            <span className="mt-1.5 block text-xs text-white/45">
                               {item.stockText}
                             </span>
                             {item.inCartLabel && (
-                              <span className="mt-1.5 block text-[10px] font-medium text-[#cbd2b3]">
+                              <span className="mt-1.5 block text-[10px] font-medium text-white/70">
                                 ✓ Di keranjang: {item.inCartLabel}
                               </span>
                             )}
