@@ -15,8 +15,8 @@ export const eggPackages: EggPackage[] = [
     count: 10,
     price: 25000,
     badge: 'Praktis Harian',
-    description: 'Kemasan karton bersekat ramah lingkungan. Melindungi telur dari guncangan saat pengiriman.',
-    idealFor: 'Pilihan pas untuk kebutuhan konsumsi mingguan keluarga kecil.',
+    description: 'Kemasan karton bersekat ramah lingkungan. Melindungi telur dari benturan saat pengiriman.',
+    idealFor: 'Kebutuhan konsumsi mingguan keluarga kecil.',
   },
   {
     id: 'tray-30',
@@ -25,6 +25,8 @@ export const eggPackages: EggPackage[] = [
     price: 75000,
     badge: 'Paling Hemat',
     description: 'Satu tray karton kokoh isi 30 butir. Siap simpan di rak dapur atau chiller kulkas.',
-    idealFor: 'Favorit keluarga, penikmat jamu, dan menu telur setengah matang berprotein tinggi.',
+    idealFor: 'Keluarga rutin, penikmat jamu, dan menu telur setengah matang.',
   },
 ];
+
+export const quickEggCounts = [1, 5, 10, 15, 30] as const;

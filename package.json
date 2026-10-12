@@ -1,5 +1,5 @@
 {
-  "name": "shoplet-storefront-prototype",
+  "name": "butir-pagi-storefront",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,9 @@
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "framer-motion": "^12.23.12",
+    "gsap": "^3.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
