@@ -117,7 +117,7 @@ function useCloseOnEscape(close: () => void, isOpen: boolean) {
   }, [close, isOpen]);
 }
 
-function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
+function Storefront() {
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const heroProduct = products[0];
@@ -273,16 +273,6 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={onNavigateAdmin}
-                className="liquid-glass inline-flex h-12 items-center gap-1.5 rounded-full px-3.5 text-xs text-white/75 transition-colors hover:bg-white/10 hover:text-white"
-                title="Buka Panel Admin Toko"
-              >
-                <Icon name="boxes" size={16} />
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => { setCartOpen(true); setMobileMenuOpen(false); }}
                 className="liquid-glass inline-flex h-12 items-center gap-2.5 rounded-full px-4 text-sm font-medium transition-colors hover:bg-white/10"
                 aria-label={`Buka keranjang belanja, ${cartCount} pesanan`}
@@ -322,17 +312,6 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 <a className="mobile-nav-link" href="#cara-pesan" onClick={() => setMobileMenuOpen(false)}>Cara Pesan</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onNavigateAdmin();
-                  }}
-                  className="mobile-nav-link flex items-center justify-between text-left text-white/80"
-                >
-                  <span>Panel Admin (Kelola Stok)</span>
-                  <Icon name="arrow-right" size={14} />
-                </button>
               </motion.nav>
             )}
           </AnimatePresence>
@@ -808,14 +787,6 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
           <div className="mx-auto mt-10 flex max-w-[1480px] flex-col gap-2 border-t border-white/[.06] pt-5 text-[10px] text-white/40 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <span>© {new Date().getFullYear()} Butir Pagi · Fian's Farm</span>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={onNavigateAdmin}
-                className="text-white/40 transition-colors hover:text-white"
-              >
-                Panel Admin
-              </button>
             </div>
             <p>Pemesanan, konfirmasi stok, dan ongkir diselesaikan via WhatsApp atau Shopee.</p>
           </div>
@@ -1331,16 +1302,6 @@ function App() {
     };
   }, []);
 
-  const goToAdmin = () => {
-    try {
-      window.history.pushState({}, '', '/admin');
-    } catch {
-      window.location.hash = 'admin';
-    }
-    setIsAdmin(true);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  };
-
   const goToStorefront = () => {
     try {
       window.history.pushState({}, '', '/');
@@ -1361,7 +1322,7 @@ function App() {
     );
   }
 
-  return <Storefront onNavigateAdmin={goToAdmin} />;
+  return <Storefront />;
 }
 
 export default App;
