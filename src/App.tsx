@@ -600,10 +600,7 @@ function Storefront() {
               <div className="grid gap-5 md:grid-cols-3">
                 <article data-scroll-reveal className="liquid-glass-strong relative col-span-1 flex flex-col justify-between overflow-hidden rounded-[2rem] p-7 md:col-span-2 md:p-10">
                   <div className="relative z-10 max-w-xl">
-                    <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[10px] tracking-[.12em] text-amber-200">
-                      NUTRISI TINGGI · BETA-KAROTEN
-                    </span>
-                    <h3 className="mt-4 font-heading text-3xl italic sm:text-4xl text-white">
+                    <h3 className="font-heading text-3xl italic sm:text-4xl text-white">
                       Kuning Telur Oranye Pekat & Bulat Kental
                     </h3>
                     <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-white/70">
@@ -629,10 +626,7 @@ function Storefront() {
 
                 <article data-scroll-reveal className="liquid-glass-strong col-span-1 flex flex-col justify-between rounded-[2rem] p-7 md:p-8">
                   <div>
-                    <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                      PROTEKSI ALAMI
-                    </span>
-                    <h3 className="mt-4 font-heading text-2xl sm:text-3xl italic text-white">
+                    <h3 className="font-heading text-2xl sm:text-3xl italic text-white">
                       Cangkang Tebal & Bebas Retak
                     </h3>
                     <p className="mt-3 text-xs font-light leading-relaxed text-white/65">
@@ -649,10 +643,7 @@ function Storefront() {
 
                 <article data-scroll-reveal className="liquid-glass-strong col-span-1 flex flex-col justify-between rounded-[2rem] p-7 md:p-8">
                   <div>
-                    <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                      BEBAS RESIDU KIMIA
-                    </span>
-                    <h3 className="mt-4 font-heading text-2xl sm:text-3xl italic text-white">
+                    <h3 className="font-heading text-2xl sm:text-3xl italic text-white">
                       100% Non-Antibiotik & Tanpa Hormon
                     </h3>
                     <p className="mt-3 text-xs font-light leading-relaxed text-white/65">
@@ -669,10 +660,7 @@ function Storefront() {
 
                 <article data-scroll-reveal className="liquid-glass-strong col-span-1 flex flex-col justify-between rounded-[2rem] p-7 md:col-span-2 md:p-10">
                   <div className="max-w-xl">
-                    <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                      JAMINAN KESEGARAN
-                    </span>
-                    <h3 className="mt-4 font-heading text-3xl sm:text-4xl italic text-white">
+                    <h3 className="font-heading text-3xl sm:text-4xl italic text-white">
                       Panen Pagi Hari, Dikirim di Hari yang Sama
                     </h3>
                     <p className="mt-3 text-xs sm:text-sm font-light leading-relaxed text-white/70">
@@ -680,7 +668,7 @@ function Storefront() {
                     </p>
                   </div>
                   <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5 text-xs text-white/60">
-                    <span>Peternakan Mitra: Blitar & Malang Selatan</span>
+                    <span>Peternakan Mitra: Kabupaten Pasuruan</span>
                     <span className="text-[#cbd2b3]">Garansi ganti butir jika pecah di jalan</span>
                   </div>
                 </article>
