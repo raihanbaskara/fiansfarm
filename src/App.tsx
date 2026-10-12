@@ -33,20 +33,33 @@ function formatPrice(value: number) {
   }).format(value);
 }
 
-function createWhatsAppUrl(lines: CartLine[], totalEggs: number, subtotal: number) {
+function createWhatsAppUrl(lines: CartLine[], totalEggs: number, subtotal: number, customerName = '', customerAddress = '') {
   const itemsList = lines
-    .map((line) => `• ${line.variant} × ${line.quantity} = ${formatPrice(line.pricePerUnit * line.quantity)}`)
+    .map((line) => {
+      const lineEggs = line.eggsCount * line.quantity;
+      return `• ${line.variant} × ${line.quantity} (${lineEggs} butir) = ${formatPrice(line.pricePerUnit * line.quantity)}`;
+    })
     .join('\n');
+
+  const customerDetails: string[] = [];
+  if (customerName.trim()) {
+    customerDetails.push(`Nama Pemesan: ${customerName.trim()}`);
+  }
+  if (customerAddress.trim()) {
+    customerDetails.push(`Alamat / Catatan: ${customerAddress.trim()}`);
+  }
 
   const message = [
     'Halo Butir Pagi / Fian\'s Farm, saya ingin memesan Telur Ayam Kampung:',
     '',
+    'Daftar Pesanan:',
     itemsList,
     '',
     `Total Telur: ${totalEggs} butir`,
-    `Estimasi Harga: ${formatPrice(subtotal)} (belum termasuk ongkir)`,
+    `Estimasi Biaya: ${formatPrice(subtotal)} (belum termasuk ongkir)`,
+    ...(customerDetails.length > 0 ? ['', 'Data Pemesan:', ...customerDetails] : []),
     '',
-    'Mohon konfirmasi ketersediaan stok, cara pengemasan, ongkir, dan total pembayaran. Terima kasih!',
+    'Mohon konfirmasi ketersediaan stok, pengemasan, dan ongkir ke alamat saya. Terima kasih!',
   ].join('\n');
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
@@ -153,30 +166,27 @@ function Storefront() {
         quantity: 1,
       }];
     });
-    setAnnouncement(`${pkg.name} berhasil ditambahkan`);
-    setCartOpen(true);
+    setAnnouncement(`${pkg.name} ditambahkan ke keranjang`);
   };
 
   const addCustomEggsToCart = () => {
     if (customEggCount < 1) return;
-    const variantName = `Kustom Satuan (${customEggCount} Butir)`;
-    const unitPrice = customEggCount * heroProduct.price;
+    const variantName = 'Beli Satuan Kustom';
 
     setCartItems((current) => {
       const existing = current.find((line) => line.productId === heroProduct.id && line.variant === variantName);
       if (existing) {
-        return current.map((line) => line === existing ? { ...line, quantity: line.quantity + 1 } : line);
+        return current.map((line) => line === existing ? { ...line, quantity: line.quantity + customEggCount } : line);
       }
       return [...current, {
         productId: heroProduct.id,
         variant: variantName,
-        pricePerUnit: unitPrice,
-        eggsCount: customEggCount,
-        quantity: 1,
+        pricePerUnit: heroProduct.price,
+        eggsCount: 1,
+        quantity: customEggCount,
       }];
     });
-    setAnnouncement(`${customEggCount} butir telur ditambahkan ke keranjang`);
-    setCartOpen(true);
+    setAnnouncement(`${customEggCount} butir telur kustom ditambahkan ke keranjang`);
   };
 
   const updateQuantity = (variant: string, change: number) => {
@@ -366,176 +376,221 @@ function Storefront() {
                 </div>
               </div>
 
-              {/* 3 CARDS: 1) KUSTOM SATUAN (PALING KIRI + ADA GAMBAR), 2) KOTAK 10 BUTIR, 3) TRAY 30 BUTIR */}
+              {/* 3 CARDS: 1) KUSTOM SATUAN (PALING KIRI DENGAN GAMBAR), 2) KOTAK 10 BUTIR, 3) TRAY 30 BUTIR */}
               <div className="grid gap-6 md:grid-cols-3">
                 {/* CARD 1: KUSTOM SATUAN (PALING KIRI DENGAN GAMBAR) */}
-                <article
-                  data-scroll-reveal
-                  className="liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                        KUSTOM SATUAN
-                      </span>
-                      <span className="text-xs text-white/45">Bebas Satuan</span>
-                    </div>
+                {(() => {
+                  const customInCart = cartItems.find((line) => line.variant === 'Beli Satuan Kustom');
+                  return (
+                    <article
+                      data-scroll-reveal
+                      className="liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
+                            SATUAN BEBAS
+                          </span>
+                          <span className="text-xs text-white/45">Mulai 1 Butir</span>
+                        </div>
 
-                    {/* Gambar Produk */}
-                    <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
-                      <img
-                        src={heroProduct.image}
-                        alt="Telur Ayam Kampung Satuan Bebas"
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    </div>
-
-                    <h3 className="mt-6 font-heading text-3xl italic text-white">Beli Satuan Kustom</h3>
-                    <p className="mt-2 text-xs font-light leading-relaxed text-white/65">
-                      Tentukan sendiri berapa butir yang Anda butuhkan (bisa satuan custom mulai 1 butir).
-                    </p>
-
-                    {/* Stepper Satuan (Step 1 by 1) */}
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-center sm:p-5">
-                      <span className="text-[10px] tracking-[.14em] text-white/45">JUMLAH TELUR</span>
-                      <div className="my-3 flex items-center justify-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setCustomEggCount((c) => Math.max(1, c - 1))}
-                          disabled={customEggCount <= 1}
-                          aria-label="Kurangi satu butir"
-                          className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
-                        >
-                          <Icon name="minus" size={16} />
-                        </button>
-
-                        <div className="min-w-24 text-center">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            step={1}
-                            value={customEggCount}
-                            onChange={(e) => setCustomEggCount(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-                            className="w-24 bg-transparent text-center font-heading text-5xl italic text-white outline-none"
-                            aria-label="Jumlah butir telur kustom"
+                        {/* Gambar Produk */}
+                        <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
+                          <img
+                            src={heroProduct.image}
+                            alt="Telur Ayam Kampung Satuan Bebas"
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                          <span className="block text-[11px] text-white/45">butir</span>
+                        </div>
+
+                        <h3 className="mt-6 font-heading text-3xl italic text-white">Beli Satuan Kustom</h3>
+                        <p className="mt-2 text-xs font-light leading-relaxed text-white/65">
+                          Tentukan sendiri berapa butir yang Anda butuhkan (bisa satuan custom mulai 1 butir).
+                        </p>
+
+                        {/* Stepper Satuan (Step 1 by 1 - Bersih Tanpa Panah Spinner) */}
+                        <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-center sm:p-5">
+                          <span className="text-[10px] tracking-[.14em] text-white/45">JUMLAH BUTIR</span>
+                          <div className="my-3 flex items-center justify-center gap-4">
+                            <button
+                              type="button"
+                              onClick={() => setCustomEggCount((c) => Math.max(1, c - 1))}
+                              disabled={customEggCount <= 1}
+                              aria-label="Kurangi satu butir"
+                              className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
+                            >
+                              <Icon name="minus" size={16} />
+                            </button>
+
+                            <div className="min-w-24 text-center">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                min={1}
+                                step={1}
+                                value={customEggCount}
+                                onChange={(e) => setCustomEggCount(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                                className="w-24 bg-transparent text-center font-heading text-5xl italic text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                aria-label="Jumlah butir telur kustom"
+                              />
+                              <span className="block text-[11px] text-white/45">butir</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setCustomEggCount((c) => c + 1)}
+                              aria-label="Tambah satu butir"
+                              className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-transform active:scale-95"
+                            >
+                              <Icon name="plus" size={16} />
+                            </button>
+                          </div>
+
+                          {/* Quick presets */}
+                          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                            {quickEggCounts.map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setCustomEggCount(preset)}
+                                className={`rounded-lg px-2.5 py-1 text-[10px] transition-colors ${
+                                  customEggCount === preset ? 'bg-[#cbd2b3] font-semibold text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                }`}
+                              >
+                                {preset} btr
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {customInCart && (
+                          <div className="mt-3 flex items-center justify-between rounded-xl border border-[#cbd2b3]/25 bg-[#cbd2b3]/5 px-3 py-2 text-xs">
+                            <span className="text-[#cbd2b3]">Di keranjang: {customInCart.quantity} butir</span>
+                            <span className="font-heading italic text-white">{formatPrice(customInCart.quantity * heroProduct.price)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-6 border-t border-white/10 pt-5">
+                        <div className="flex items-baseline justify-between">
+                          <div>
+                            <span className="block text-[9px] tracking-[.14em] text-white/45">KALKULASI BIAYA</span>
+                            <span className="mt-1 block font-heading text-3xl italic text-white">
+                              {formatPrice(customEggCount * heroProduct.price)}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-white/50">{customEggCount} × {formatPrice(heroProduct.price)}</span>
                         </div>
 
                         <button
                           type="button"
-                          onClick={() => setCustomEggCount((c) => c + 1)}
-                          aria-label="Tambah satu butir"
-                          className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-transform active:scale-95"
+                          onClick={addCustomEggsToCart}
+                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95"
                         >
-                          <Icon name="plus" size={16} />
+                          <Icon name="plus" size={15} /> Tambahkan {customEggCount} Butir ke Keranjang
                         </button>
                       </div>
-
-                      {/* Quick presets */}
-                      <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-                        {quickEggCounts.map((preset) => (
-                          <button
-                            key={preset}
-                            type="button"
-                            onClick={() => setCustomEggCount(preset)}
-                            className={`rounded-lg px-2.5 py-1 text-[10px] transition-colors ${
-                              customEggCount === preset ? 'bg-[#cbd2b3] font-semibold text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'
-                            }`}
-                          >
-                            {preset} btr
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 border-t border-white/10 pt-5">
-                    <div className="flex items-baseline justify-between">
-                      <div>
-                        <span className="block text-[9px] tracking-[.14em] text-white/45">KALKULASI BIAYA</span>
-                        <span className="mt-1 block font-heading text-3xl italic text-white">
-                          {formatPrice(customEggCount * heroProduct.price)}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-white/50">{customEggCount} × {formatPrice(heroProduct.price)}</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={addCustomEggsToCart}
-                      className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15"
-                    >
-                      <Icon name="bag" size={15} /> Tambahkan {customEggCount} Butir ke Keranjang
-                    </button>
-                  </div>
-                </article>
+                    </article>
+                  );
+                })()}
 
                 {/* CARD 2 & 3: PAKET KOTAK 10 BUTIR & TRAY 30 BUTIR */}
-                {eggPackages.map((pkg) => (
-                  <article
-                    key={pkg.id}
-                    data-scroll-reveal
-                    className={`liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1 ${
-                      pkg.id === 'tray-30' ? 'ring-1 ring-[#cbd2b3]/30 shadow-[0_0_40px_rgba(203,210,179,0.06)]' : ''
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                          {pkg.badge}
-                        </span>
-                        <span className="text-xs text-white/45">{pkg.count} Butir</span>
-                      </div>
-
-                      <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
-                        <img
-                          src={heroProduct.image}
-                          alt={pkg.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      </div>
-
-                      <h3 className="mt-6 font-heading text-3xl italic text-white">{pkg.name}</h3>
-                      <p className="mt-2 text-xs font-light leading-relaxed text-white/65">{pkg.description}</p>
-                      <p className="mt-4 rounded-xl border border-white/[.08] bg-white/[.02] p-3 text-[11px] text-white/60">
-                        <span className="font-medium text-white/80">Rekomendasi: </span>
-                        {pkg.idealFor}
-                      </p>
-                    </div>
-
-                    <div className="mt-6 border-t border-white/10 pt-5">
-                      <div className="flex items-baseline justify-between">
-                        <div>
-                          <span className="block text-[9px] tracking-[.14em] text-white/45">TOTAL HARGA</span>
-                          <span className="mt-1 block font-heading text-3xl italic text-white">{formatPrice(pkg.price)}</span>
+                {eggPackages.map((pkg) => {
+                  const inCart = cartItems.find((line) => line.variant === pkg.name);
+                  const qtyInCart = inCart?.quantity || 0;
+                  return (
+                    <article
+                      key={pkg.id}
+                      data-scroll-reveal
+                      className={`liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1 ${
+                        pkg.id === 'tray-30' ? 'ring-1 ring-[#cbd2b3]/30 shadow-[0_0_40px_rgba(203,210,179,0.06)]' : ''
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
+                            {pkg.badge}
+                          </span>
+                          <span className="text-xs text-white/45">{pkg.count} Butir</span>
                         </div>
-                        <span className="text-[11px] text-white/50">(@ Rp2.500 / butir)</span>
+
+                        <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
+                          <img
+                            src={heroProduct.image}
+                            alt={pkg.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        </div>
+
+                        <h3 className="mt-6 font-heading text-3xl italic text-white">{pkg.name}</h3>
+                        <p className="mt-2 text-xs font-light leading-relaxed text-white/65">{pkg.description}</p>
+                        <p className="mt-4 rounded-xl border border-white/[.08] bg-white/[.02] p-3 text-[11px] text-white/60">
+                          <span className="font-medium text-white/80">Rekomendasi: </span>
+                          {pkg.idealFor}
+                        </p>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => addPackageToCart(pkg)}
-                          className="liquid-glass-strong inline-flex items-center justify-center gap-1.5 rounded-full py-3 text-xs font-medium text-white transition-colors hover:bg-white/15"
-                        >
-                          <Icon name="plus" size={14} /> Ke Keranjang
-                        </button>
-                        <a
-                          href={singleWhatsAppUrl(pkg.count, heroProduct.price)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="liquid-glass inline-flex items-center justify-center gap-1.5 rounded-full py-3 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                          WhatsApp <Icon name="arrow-up-right" size={13} />
-                        </a>
+                      <div className="mt-6 border-t border-white/10 pt-5">
+                        <div className="flex items-baseline justify-between">
+                          <div>
+                            <span className="block text-[9px] tracking-[.14em] text-white/45">TOTAL HARGA</span>
+                            <span className="mt-1 block font-heading text-3xl italic text-white">{formatPrice(pkg.price)}</span>
+                          </div>
+                          <span className="text-[11px] text-white/50">(@ Rp2.500 / butir)</span>
+                        </div>
+
+                        <div className="mt-4">
+                          {qtyInCart === 0 ? (
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <button
+                                type="button"
+                                onClick={() => addPackageToCart(pkg)}
+                                className="liquid-glass-strong inline-flex items-center justify-center gap-1.5 rounded-full py-3 text-xs font-medium text-white transition-colors hover:bg-white/15 active:scale-95"
+                              >
+                                <Icon name="plus" size={14} /> Ke Keranjang
+                              </button>
+                              <a
+                                href={singleWhatsAppUrl(pkg.count, heroProduct.price)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="liquid-glass inline-flex items-center justify-center gap-1.5 rounded-full py-3 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                              >
+                                WhatsApp <Icon name="arrow-up-right" size={13} />
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-full border border-[#cbd2b3]/25 bg-white/[.03] p-1.5 pl-4">
+                              <span className="text-xs text-[#cbd2b3]">
+                                {qtyInCart} {pkg.id === 'pack-10' ? 'Kotak' : 'Tray'} ({qtyInCart * pkg.count} butir)
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => updateQuantity(pkg.name, -1)}
+                                  aria-label="Kurangi jumlah paket"
+                                  className="liquid-glass flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 active:scale-95"
+                                >
+                                  <Icon name="minus" size={12} />
+                                </button>
+                                <span className="w-5 text-center text-xs font-medium text-white">{qtyInCart}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateQuantity(pkg.name, 1)}
+                                  aria-label="Tambah jumlah paket"
+                                  className="liquid-glass flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 active:scale-95"
+                                >
+                                  <Icon name="plus" size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -806,13 +861,10 @@ function Storefront() {
               lines={cartItems}
               totalEggs={totalEggsInCart}
               subtotal={subtotal}
+              shopeeUrl={heroProduct.shopeeUrl}
               onClose={() => setCartOpen(false)}
               onUpdate={updateQuantity}
               onRemove={removeLine}
-              onCheckout={() => {
-                setCartOpen(false);
-                setCheckoutStep('review');
-              }}
               onShop={() => {
                 setCartOpen(false);
                 scrollToSection('paket');
@@ -821,7 +873,7 @@ function Storefront() {
           )}
         </AnimatePresence>
 
-        {/* CHECKOUT MODAL (DIRAPIKAN AGAR TOMBOL CLOSE TIDAK MENABRAK JUDUL) */}
+        {/* CHECKOUT MODAL */}
         <AnimatePresence>
           {checkoutStep && (
             <CheckoutDialog
@@ -847,6 +899,42 @@ function Storefront() {
           )}
         </AnimatePresence>
 
+        {/* STICKY FLOATING CART BAR DI HOME */}
+        <AnimatePresence>
+          {totalEggsInCart > 0 && !cartOpen && !checkoutStep && (
+            <motion.aside
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ duration: 0.35, ease: easeOut }}
+              className="fixed bottom-5 inset-x-4 z-40 mx-auto max-w-xl"
+              aria-label="Ringkasan keranjang mengambang"
+            >
+              <div className="liquid-glass-strong flex items-center justify-between gap-3 rounded-full p-2.5 pl-5 pr-2.5 shadow-2xl backdrop-blur-2xl ring-1 ring-white/20">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#cbd2b3]">
+                    <Icon name="bag" size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-white">
+                      {totalEggsInCart} Butir Telur <span className="font-normal text-white/50">({cartCount} item)</span>
+                    </p>
+                    <p className="font-heading text-sm italic text-[#cbd2b3]">{formatPrice(subtotal)}</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCartOpen(true)}
+                  className="liquid-glass-strong inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 text-xs font-semibold uppercase tracking-[.08em] text-white transition-transform hover:scale-[1.02] active:scale-95"
+                >
+                  Checkout <Icon name="arrow-right" size={14} />
+                </button>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
+
         {/* TOAST ANNOUNCEMENT */}
         <AnimatePresence>
           {announcement && (
@@ -855,7 +943,7 @@ function Storefront() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               role="status"
-              className="liquid-glass-strong fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full border border-white/20 px-6 py-3 text-xs font-medium text-white shadow-2xl backdrop-blur-xl"
+              className="liquid-glass-strong fixed bottom-24 left-1/2 z-[100] -translate-x-1/2 rounded-full border border-white/20 px-6 py-3 text-xs font-medium text-white shadow-2xl backdrop-blur-xl"
             >
               {announcement}
             </motion.div>
@@ -870,15 +958,18 @@ type CartDrawerProps = {
   lines: CartLine[];
   totalEggs: number;
   subtotal: number;
+  shopeeUrl: string;
   onClose: () => void;
   onUpdate: (variant: string, change: number) => void;
   onRemove: (variant: string) => void;
-  onCheckout: () => void;
   onShop: () => void;
 };
 
-function CartDrawer({ lines, totalEggs, subtotal, onClose, onUpdate, onRemove, onCheckout, onShop }: CartDrawerProps) {
-  const whatsappUrl = createWhatsAppUrl(lines, totalEggs, subtotal);
+function CartDrawer({ lines, totalEggs, subtotal, shopeeUrl, onClose, onUpdate, onRemove, onShop }: CartDrawerProps) {
+  const [customerName, setCustomerName] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+
+  const whatsappUrl = createWhatsAppUrl(lines, totalEggs, subtotal, customerName, customerAddress);
 
   return (
     <motion.div
@@ -900,9 +991,9 @@ function CartDrawer({ lines, totalEggs, subtotal, onClose, onUpdate, onRemove, o
       >
         <div className="flex items-start justify-between border-b border-white/10 pb-4">
           <div>
-            <p className="text-[10px] tracking-[.15em] text-white/55">RINGKASAN PESANAN</p>
+            <p className="text-[10px] tracking-[.15em] text-[#cbd2b3]">RINGKASAN & CHECKOUT</p>
             <h2 id="bag-title" className="mt-1 font-heading text-3xl italic">
-              Keranjang <span className="font-body text-sm not-italic text-white/55">({totalEggs} butir)</span>
+              Keranjang Belanja <span className="font-body text-sm not-italic text-white/55">({totalEggs} butir)</span>
             </h2>
           </div>
           <button
@@ -922,19 +1013,19 @@ function CartDrawer({ lines, totalEggs, subtotal, onClose, onUpdate, onRemove, o
             </span>
             <h3 className="mt-5 font-heading text-3xl italic">Keranjangmu masih kosong.</h3>
             <p className="mt-2 max-w-xs text-xs font-light leading-relaxed text-white/60">
-              Pilih jumlah butir satuan kustom atau paket kemasan untuk mulai berbelanja.
+              Pilih jumlah butir satuan kustom atau paket kemasan di beranda untuk mulai berbelanja.
             </p>
             <button
               type="button"
               onClick={onShop}
               className="liquid-glass-strong mt-6 inline-flex items-center gap-2 rounded-full px-5 py-3 text-xs font-medium"
             >
-              Lihat pilihan telur <Icon name="arrow-right" size={15} />
+              Lihat Pilihan Telur di Beranda <Icon name="arrow-right" size={15} />
             </button>
           </div>
         ) : (
           <>
-            <div className="overlay-scroll flex-1 space-y-4 overflow-y-auto py-5">
+            <div className="overlay-scroll flex-1 space-y-3 overflow-y-auto py-4">
               {lines.map((line) => (
                 <div key={line.variant} className="flex items-center justify-between gap-4 rounded-xl border border-white/[.06] bg-white/[.02] p-4">
                   <div className="min-w-0 flex-1">
@@ -949,16 +1040,16 @@ function CartDrawer({ lines, totalEggs, subtotal, onClose, onUpdate, onRemove, o
                         type="button"
                         onClick={() => onUpdate(line.variant, -1)}
                         aria-label="Kurangi kuantitas"
-                        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10"
+                        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 active:scale-95"
                       >
                         <Icon name="minus" size={13} />
                       </button>
-                      <span className="w-7 text-center text-xs font-medium">{line.quantity}</span>
+                      <span className="w-7 text-center text-xs font-medium text-white">{line.quantity}</span>
                       <button
                         type="button"
                         onClick={() => onUpdate(line.variant, 1)}
                         aria-label="Tambah kuantitas"
-                        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10"
+                        className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 active:scale-95"
                       >
                         <Icon name="plus" size={13} />
                       </button>
@@ -974,33 +1065,58 @@ function CartDrawer({ lines, totalEggs, subtotal, onClose, onUpdate, onRemove, o
                   </div>
                 </div>
               ))}
+
+              {/* DATA PEMESAN OPSIONAL */}
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.02] p-4 text-xs">
+                <span className="block text-[10px] tracking-[.14em] text-[#cbd2b3]">INFORMASI PEMESAN (OPSIONAL)</span>
+                <p className="mt-1 text-[11px] font-light text-white/55">
+                  Bisa diisi agar langsung tercantum di chat WhatsApp, atau kosongkan jika ingin langsung tanya jawab via chat.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Nama Lengkap (opsional)"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/30"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Alamat Pengiriman / Catatan (opsional)"
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white placeholder-white/30 outline-none focus:border-white/30"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-white/10 pt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/65">Total ({totalEggs} butir)</span>
                 <span className="font-heading text-2xl italic text-white">{formatPrice(subtotal)}</span>
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-white/45">
-                Pemesanan diproses langsung via WhatsApp (+62 823-3927-2715) atau etalase Shopee.
+              <p className="mt-1.5 text-[10px] leading-relaxed text-white/45">
+                Pemesanan diproses langsung via WhatsApp (+62 823-3927-2715) atau etalase resmi Shopee.
               </p>
 
-              <div className="mt-4 flex flex-col gap-2.5">
+              <div className="mt-4 flex flex-col gap-2">
                 <a
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="liquid-glass-strong flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5"
+                  className="liquid-glass-strong flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 active:scale-95"
                 >
                   Pesan via WhatsApp ({whatsappDisplay}) <Icon name="arrow-up-right" size={15} />
                 </a>
-                <button
-                  type="button"
-                  onClick={onCheckout}
-                  className="rounded-full border border-white/15 py-3 text-xs text-white/80 transition-colors hover:bg-white/5"
+                <a
+                  href={shopeeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="liquid-glass flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 >
-                  Tinjau Ringkasan Pesanan
-                </button>
+                  Beli via Shopee Official <Icon name="arrow-up-right" size={14} />
+                </a>
               </div>
             </div>
           </>
