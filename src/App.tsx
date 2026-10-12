@@ -328,7 +328,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                     setMobileMenuOpen(false);
                     onNavigateAdmin();
                   }}
-                  className="mobile-nav-link flex items-center justify-between text-left text-emerald-300"
+                  className="mobile-nav-link flex items-center justify-between text-left text-white/80"
                 >
                   <span>Panel Admin (Kelola Stok)</span>
                   <Icon name="arrow-right" size={14} />
@@ -351,11 +351,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 </span>
                 <span>Telur Ayam Kampung Asli</span>
                 <span className="text-white/30">·</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-300 font-medium">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                  </span>
+                <span className="inline-flex items-center gap-1.5 text-white/80 font-medium">
                   Stok: {new Intl.NumberFormat('id-ID').format(currentStock)} Butir Siap Kirim
                 </span>
               </motion.div>
@@ -416,7 +412,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 <div data-scroll-reveal className="liquid-glass rounded-[1.4rem] p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] tracking-[.16em] text-white/45">PAKAN ALAMI 100%</span>
-                    <span className="text-emerald-300"><Icon name="sparkle" size={18} /></span>
+                    <span className="text-white/60"><Icon name="sparkle" size={18} /></span>
                   </div>
                   <p className="mt-3 font-heading text-3xl italic leading-none text-white">Free-Range</p>
                   <p className="mt-1.5 text-[11px] font-light text-white/60">Dedak padi, jagung & maggot BSF</p>
@@ -691,7 +687,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                     </p>
                   </div>
                   <div className="mt-6 flex items-center gap-3 text-xs text-white/50">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-emerald-300">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80">
                       <Icon name="check" size={15} />
                     </span>
                     <span>Tersortir tanpa retak halus</span>
@@ -708,7 +704,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                     </p>
                   </div>
                   <div className="mt-6 flex items-center gap-3 text-xs text-white/50">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-emerald-300">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80">
                       <Icon name="check" size={15} />
                     </span>
                     <span>Aman konsumsi setengah matang</span>
@@ -1150,7 +1146,7 @@ function CheckoutDialog({ step, lines, totalEggs, subtotal, shopeeUrl, onClose, 
 
         {step === 'complete' ? (
           <div className="py-6 text-center">
-            <span className="liquid-glass mx-auto flex h-16 w-16 items-center justify-center rounded-full text-emerald-300">
+            <span className="liquid-glass mx-auto flex h-16 w-16 items-center justify-center rounded-full text-white">
               <Icon name="check" size={26} />
             </span>
             <h2 className="mt-5 font-heading text-4xl italic text-white">Pesanan Disiapkan</h2>
