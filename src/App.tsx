@@ -22,6 +22,7 @@ type CheckoutStep = 'review' | 'complete' | null;
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
 const heroVideo = '/videos/farm-wide.mp4';
+const collectionVideo = '/videos/farm-close.mp4';
 
 function readInventory() {
   try {
@@ -365,8 +366,10 @@ function Storefront() {
           </section>
 
           {/* 2. INTERACTIVE PACK BUILDER (PILIHAN PAKET & KUSTOM BUTIR) */}
-          <section id="paket" className="relative isolate py-28 sm:py-36">
-            <div className="mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
+          <section id="paket" className="relative isolate min-h-screen overflow-hidden bg-black py-28 sm:py-36">
+            <FarmVideoBackground src={collectionVideo} className="farm-video-background--collection" reduceMotion={Boolean(reduceMotion)} />
+            <div className="collection-shade" />
+            <div className="relative z-10 mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
               <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-medium tracking-[.18em] text-[#cbd2b3]">PILIHAN KEMASAN HIGIENIS</p>
