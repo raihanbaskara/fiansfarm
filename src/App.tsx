@@ -43,9 +43,7 @@ function formatPrice(value: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
 }
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('id-ID').format(value);
-}
+
 
 function useCloseOnEscape(close: () => void, isOpen: boolean) {
   useEffect(() => {
@@ -58,33 +56,7 @@ function useCloseOnEscape(close: () => void, isOpen: boolean) {
   }, [close, isOpen]);
 }
 
-const comparisons = [
-  {
-    feature: 'Warna Kuning Telur',
-    market: 'Kuning pucat, encer, mudah ambyar',
-    ourFarm: 'Oranye kemerahan pekat, bulat kokoh & kental berprotein tinggi',
-  },
-  {
-    feature: 'Aroma & Karakter Rasa',
-    market: 'Cenderung berbau amis tajam',
-    ourFarm: 'Gurih manis alami, bebas amis, harum saat diolah',
-  },
-  {
-    feature: 'Sistem Pemeliharaan',
-    market: 'Kandang baterai sempit buatan pabrik',
-    ourFarm: 'Umbaran bebas (Free-Range), sinar matahari penuh & bahagia',
-  },
-  {
-    feature: 'Pakan Alami Harian',
-    market: 'Konsentrat kimia & pakan instan',
-    ourFarm: 'Dedak padi fermentasi, jagung giling, sayuran hijau & maggot BSF',
-  },
-  {
-    feature: 'Siklus dari Kandang ke Meja',
-    market: 'Menumpuk 1–3 minggu di gudang agen',
-    ourFarm: 'Maksimal 24 jam langsung dipanen & disortir dari peternak mitra',
-  },
-];
+
 
 const faqs = [
   {
@@ -227,7 +199,6 @@ function Storefront() {
               <a className="nav-link" href="#hero">Beranda</a>
               <a className="nav-link" href="#paket">Pilihan Paket</a>
               <a className="nav-link" href="#kualitas">Standar Kualitas</a>
-              <a className="nav-link" href="#iot">Teknologi Kandang</a>
               <a className="nav-link" href="#faq">FAQ</a>
               <a className="nav-link" href="/admin">Panel Admin</a>
               <button
@@ -279,7 +250,6 @@ function Storefront() {
                 <a className="mobile-nav-link" href="#hero" onClick={() => setMobileMenuOpen(false)}>Beranda</a>
                 <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Paket</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
-                <a className="mobile-nav-link" href="#iot" onClick={() => setMobileMenuOpen(false)}>Teknologi Kandang</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
                 <a className="mobile-nav-link" href="/admin" onClick={() => setMobileMenuOpen(false)}>Panel Admin</a>
               </motion.nav>
@@ -378,7 +348,10 @@ function Storefront() {
                   </h2>
                 </div>
                 <div className="max-w-md text-xs font-light leading-relaxed text-white/65">
-                  Setiap butir telur dikemas dalam karton proteksi peredam benturan. Tersedia stok langsung dari peternakan mitra kami.
+                  <p>Setiap butir telur dikemas dalam karton proteksi peredam benturan.</p>
+                  <p className="mt-1 text-[11px] text-[#cbd2b3]">
+                    {availableStock > 0 ? `Tersedia ${availableStock} butir siap kirim` : 'Stok segar panen harian'}
+                  </p>
                 </div>
               </div>
 
@@ -641,108 +614,7 @@ function Storefront() {
             </div>
           </section>
 
-          {/* 4. TRANSPARANSI IOT CONVEYOR & SENSOR COUNTER */}
-          <section id="iot" className="relative isolate border-t border-white/[.08] py-24 sm:py-32">
-            <div className="mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
-              <div className="liquid-glass-strong relative overflow-hidden rounded-[2.5rem] p-8 sm:p-12 lg:p-16">
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)] lg:items-center">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3.5 py-1.5 text-xs text-emerald-200">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                      <span>SISTEM SENSOR KANDANG AKTIF</span>
-                    </div>
 
-                    <h2 className="mt-5 font-heading text-4xl italic leading-none text-white sm:text-5xl lg:text-6xl">
-                      Transparansi Panen Berbasis IoT.
-                    </h2>
-
-                    <p className="mt-4 max-w-xl text-sm font-light leading-relaxed text-white/70">
-                      Inovasi peternakan Butir Pagi menghubungkan mesin conveyor penyortir dengan sensor Infrared (IR) counter dan Node-RED MQTT. Setiap butir telur yang baru dipanen tercatat secara real-time demi akurasi stok dan ketertelusuran produk.
-                    </p>
-
-                    <div className="mt-8 flex flex-wrap gap-4">
-                      <a
-                        href="/admin"
-                        className="liquid-glass inline-flex items-center gap-2 rounded-full px-5 py-3 text-xs font-medium tracking-[.1em] text-white transition-colors hover:bg-white/15"
-                      >
-                        Buka Dashboard Admin Peternak <Icon name="arrow-up-right" size={14} />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Status Panel Box */}
-                  <div className="rounded-2xl border border-white/10 bg-black/50 p-6 sm:p-8">
-                    <p className="text-[10px] tracking-[.16em] text-white/45">LIVE CONVEYOR #01 STATUS</p>
-
-                    <div className="mt-5 grid grid-cols-2 gap-4">
-                      <div className="rounded-xl border border-white/[.06] bg-white/[.03] p-4">
-                        <span className="text-[10px] text-white/45">KONEKSI</span>
-                        <p className="mt-1 flex items-center gap-2 text-sm font-medium text-emerald-300">
-                          <Icon name="wifi" size={15} /> Terkalibrasi
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl border border-white/[.06] bg-white/[.03] p-4">
-                        <span className="text-[10px] text-white/45">SENSOR</span>
-                        <p className="mt-1 flex items-center gap-2 text-sm font-medium text-white/90">
-                          <Icon name="activity" size={15} /> IR Counter
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 rounded-xl border border-white/[.06] bg-white/[.03] p-4">
-                      <span className="text-[10px] text-white/45">TOTAL STOK TERSEDIA HARI INI</span>
-                      <p className="mt-2 font-heading text-4xl italic text-white">
-                        {formatCount(availableStock)} <span className="font-body text-xs not-italic text-white/50">butir siap kirim</span>
-                      </p>
-                    </div>
-
-                    <p className="mt-4 text-[10px] leading-relaxed text-white/40">
-                      Data stok disinkronkan langsung dari catatan operasional conveyor peternakan.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 5. QUALITY COMPARISON MATRIX */}
-          <section className="relative isolate border-t border-white/[.08] py-28 sm:py-36">
-            <div className="mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
-              <div className="mb-12 text-center">
-                <p className="text-[10px] font-medium tracking-[.18em] text-[#cbd2b3]">PERBANDINGAN NYATA</p>
-                <h2 className="mt-2 font-heading text-4xl italic leading-none sm:text-5xl md:text-6xl">
-                  Telur Pasar Biasa vs Butir Pagi.
-                </h2>
-                <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm font-light text-white/65">
-                  Kenapa harga Rp2.500 / butir memberikan nilai kesehatan yang jauh lebih berharga bagi keluarga Anda.
-                </p>
-              </div>
-
-              <div className="liquid-glass-strong overflow-hidden rounded-[2rem]">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[680px] border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-white/10 text-[10px] tracking-[.14em] text-white/45">
-                        <th className="px-6 py-5 font-normal">PARAMETER KUALITAS</th>
-                        <th className="px-6 py-5 font-normal">TELUR PASAR BIASA</th>
-                        <th className="px-6 py-5 font-normal text-[#cbd2b3]">TELUR KAMPUNG BUTIR PAGI</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[.06] text-xs">
-                      {comparisons.map((row) => (
-                        <tr key={row.feature} className="transition-colors hover:bg-white/[.02]">
-                          <td className="px-6 py-4.5 font-medium text-white/90">{row.feature}</td>
-                          <td className="px-6 py-4.5 font-light text-white/50">{row.market}</td>
-                          <td className="px-6 py-4.5 font-medium text-[#cbd2b3]">{row.ourFarm}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
 
           {/* 6. INTERACTIVE FAQ SECTION */}
           <section id="faq" className="relative isolate border-t border-white/[.08] py-28 sm:py-36">
