@@ -200,7 +200,6 @@ function Storefront() {
               <a className="nav-link" href="#paket">Pilihan Paket</a>
               <a className="nav-link" href="#kualitas">Standar Kualitas</a>
               <a className="nav-link" href="#faq">FAQ</a>
-              <a className="nav-link" href="/admin">Panel Admin</a>
               <button
                 type="button"
                 onClick={() => scrollToSection('paket')}
@@ -251,7 +250,6 @@ function Storefront() {
                 <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Paket</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
-                <a className="mobile-nav-link" href="/admin" onClick={() => setMobileMenuOpen(false)}>Panel Admin</a>
               </motion.nav>
             )}
           </AnimatePresence>
@@ -688,7 +686,6 @@ function Storefront() {
               <a href="#paket" className="text-white/60 hover:text-white transition-colors">Pilihan Paket</a>
               <a href="#kualitas" className="text-white/60 hover:text-white transition-colors">Kualitas</a>
               <a href="#faq" className="text-white/60 hover:text-white transition-colors">FAQ</a>
-              <a href="/admin" className="text-white/60 hover:text-white transition-colors">Panel Admin</a>
               <a
                 href={heroProduct.shopeeUrl}
                 target="_blank"
