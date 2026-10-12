@@ -257,7 +257,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
 
             <nav aria-label="Navigasi utama" className="liquid-glass hidden items-center gap-1 rounded-full p-1.5 md:flex">
               <a className="nav-link" href="#hero">Beranda</a>
-              <a className="nav-link" href="#paket">Pilihan Paket & Satuan</a>
+              <a className="nav-link" href="#paket">Pilihan Telur</a>
               <a className="nav-link" href="#cara-pesan">Cara Pesan</a>
               <a className="nav-link" href="#kualitas">Standar Kualitas</a>
               <a className="nav-link" href="#faq">FAQ</a>
@@ -318,7 +318,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                 className="liquid-glass mx-auto mt-2 flex max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-2xl p-3 md:hidden"
               >
                 <a className="mobile-nav-link" href="#hero" onClick={() => setMobileMenuOpen(false)}>Beranda</a>
-                <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Paket & Satuan</a>
+                <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Telur</a>
                 <a className="mobile-nav-link" href="#cara-pesan" onClick={() => setMobileMenuOpen(false)}>Cara Pesan</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
@@ -375,7 +375,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                   onClick={() => scrollToSection('paket')}
                   className="liquid-glass-strong group inline-flex items-center gap-3 rounded-full px-7 py-4 text-sm font-medium text-white transition-transform hover:-translate-y-0.5"
                 >
-                  <span>Pilih Jumlah & Paket</span>
+                  <span>Pilih Telur</span>
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 transition-transform group-hover:translate-x-0.5">
                     <Icon name="arrow-right" size={14} />
                   </span>
@@ -443,9 +443,9 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
             <div className="relative z-10 mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
               <div data-scroll-reveal className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-[10px] font-medium tracking-[.18em] text-[#cbd2b3]">PILIHAN KEMASAN & SATUAN</p>
+                  <p className="text-[10px] font-medium tracking-[.18em] text-[#cbd2b3]">PILIHAN TELUR</p>
                   <h2 className="mt-2 font-heading text-4xl italic leading-none sm:text-5xl md:text-6xl">
-                    Pilih Jumlah Butir atau Paket Siap Simpan.
+                    Untuk Meja Sehari-hari.
                   </h2>
                   <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-1.5 text-xs text-emerald-300">
                     <span className="relative flex h-2 w-2">
@@ -458,155 +458,130 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                   </div>
                 </div>
                 <div data-scroll-velocity className="scroll-velocity-mark max-w-md text-xs font-light leading-relaxed text-white/65">
-                  Tentukan jumlah butir satuan bebas sesuai kebutuhan, atau pilih kotak 10 butir dan tray keluarga 30 butir yang paling hemat.
+                  Telur Ayam Kampung Asli mitra Fian's Farm (Kabupaten Pasuruan). Pilih jumlah butir satuan bebas, kotak praktis 10 butir, atau tray keluarga 30 butir.
                 </div>
               </div>
 
-              {/* 3 CARDS: 1) KUSTOM SATUAN (PALING KIRI DENGAN GAMBAR), 2) KOTAK 10 BUTIR, 3) TRAY 30 BUTIR */}
-              <div className="grid gap-6 md:grid-cols-3">
-                {/* CARD 1: KUSTOM SATUAN (PALING KIRI DENGAN GAMBAR) */}
-                {(() => {
-                  const customInCart = cartItems.find((line) => line.variant === 'Beli Satuan Kustom');
-                  return (
-                    <article
-                      data-scroll-reveal
-                      className="liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                            SATUAN BEBAS
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                            Stok: {new Intl.NumberFormat('id-ID').format(currentStock)} butir
-                          </span>
-                        </div>
+              {/* 3 CARDS BERGAYA FOTO STUDIO GELAP DENGAN TOMBOL PLUS LINGKARAN */}
+              {(() => {
+                const customInCart = cartItems.find((line) => line.variant === 'Beli Satuan Kustom');
+                const pack10InCart = cartItems.find((line) => line.variant === 'Kotak Segar 10 Butir');
+                const tray30InCart = cartItems.find((line) => line.variant === 'Tray Keluarga 30 Butir');
 
-                        {/* Gambar Produk */}
-                        <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
+                const offerings = [
+                  {
+                    id: 'satuan-kustom',
+                    code: 'KAMPUNG 01 · AYAM KAMPUNG',
+                    name: 'Beli Satuan Kustom',
+                    image: '/images/products/ayam-kampung.webp',
+                    priceText: formatPrice(heroProduct.price),
+                    unitText: '@ Rp2.500 / butir',
+                    badge: 'PILIHAN',
+                    stockText: currentStock > 0 ? `Tersedia ${new Intl.NumberFormat('id-ID').format(currentStock)} butir` : 'Stok habis',
+                    isAvailable: currentStock > 0,
+                    inCartLabel: customInCart ? `${customInCart.quantity} butir` : null,
+                    onAdd: () => addCustomEggsToCart(1),
+                  },
+                  {
+                    id: 'pack-10',
+                    code: 'KAMPUNG 02 · AYAM KAMPUNG',
+                    name: 'Kotak Segar 10 Butir',
+                    image: '/images/products/ayam-negeri.webp',
+                    priceText: formatPrice(eggPackages[0].price),
+                    unitText: '10 butir / kotak',
+                    badge: 'PILIHAN',
+                    stockText: currentStock >= 10 ? `Tersedia ${Math.floor(currentStock / 10)} kotak (${new Intl.NumberFormat('id-ID').format(currentStock)} butir)` : 'Stok menipis',
+                    isAvailable: currentStock >= 10,
+                    inCartLabel: pack10InCart ? `${pack10InCart.quantity} kotak (${pack10InCart.quantity * 10} butir)` : null,
+                    onAdd: () => addPackageToCart(eggPackages[0]),
+                  },
+                  {
+                    id: 'tray-30',
+                    code: 'KAMPUNG 03 · AYAM KAMPUNG',
+                    name: 'Tray Keluarga 30 Butir',
+                    image: '/images/products/puyuh.webp',
+                    priceText: formatPrice(eggPackages[1].price),
+                    unitText: '30 butir / tray',
+                    badge: 'PILIHAN',
+                    stockText: currentStock >= 30 ? `Tersedia ${Math.floor(currentStock / 30)} tray (${new Intl.NumberFormat('id-ID').format(currentStock)} butir)` : 'Stok menipis',
+                    isAvailable: currentStock >= 30,
+                    inCartLabel: tray30InCart ? `${tray30InCart.quantity} tray (${tray30InCart.quantity * 30} butir)` : null,
+                    onAdd: () => addPackageToCart(eggPackages[1]),
+                  },
+                ];
+
+                return (
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {offerings.map((item) => (
+                      <motion.article
+                        key={item.id}
+                        data-scroll-reveal
+                        className="product-card group relative flex flex-col justify-between overflow-hidden rounded-[1.6rem] border border-white/[.08] bg-black/45 p-3.5 sm:p-4 transition-all duration-500 hover:border-white/20 hover:bg-black/65 hover:-translate-y-1.5"
+                      >
+                        {/* WADAH FOTO STUDIO GELAP ASPECT 4/5 */}
+                        <div className="product-photo relative aspect-[4/5] w-full overflow-hidden rounded-[1.2rem] bg-[#070908]">
                           <img
-                            src={heroProduct.image}
-                            alt="Telur Ayam Kampung Satuan Bebas"
+                            src={item.image}
+                            alt={item.name}
                             loading="lazy"
                             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                        </div>
-
-                        <h3 className="mt-6 font-heading text-3xl italic text-white">Beli Satuan Kustom</h3>
-                        <p className="mt-2 text-xs font-light leading-relaxed text-white/65">
-                          Tentukan sendiri berapa butir yang Anda butuhkan (bisa satuan custom mulai 1 butir).
-                        </p>
-                        <p className="mt-4 rounded-xl border border-white/[.08] bg-white/[.02] p-3 text-[11px] text-white/60">
-                          <span className="font-medium text-white/80">Rekomendasi: </span>
-                          Kebutuhan harian fleksibel, jamu herbal, atau tester mutu telur segar.
-                        </p>
-                      </div>
-
-                      <div className="mt-6 border-t border-white/10 pt-5">
-                        <div className="flex items-baseline justify-between">
-                          <div>
-                            <span className="block text-[9px] tracking-[.14em] text-white/45">TOTAL HARGA</span>
-                            <span className="mt-1 block font-heading text-3xl italic text-white">
-                              {formatPrice(heroProduct.price)}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-white/50">(@ Rp2.500 / butir)</span>
-                        </div>
-
-                        {customInCart && (
-                          <div className="mt-3 flex items-center justify-between rounded-xl border border-[#cbd2b3]/25 bg-[#cbd2b3]/5 px-3 py-2 text-xs">
-                            <span className="text-[#cbd2b3]">Di keranjang: {customInCart.quantity} butir</span>
-                            <span className="font-heading italic text-white">{formatPrice(customInCart.quantity * heroProduct.price)}</span>
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => addCustomEggsToCart(1)}
-                          disabled={currentStock <= 0}
-                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Icon name="bag" size={15} /> {currentStock > 0 ? 'Tambahkan ke Keranjang' : 'Stok Habis'}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })()}
-
-                {/* CARD 2 & 3: PAKET KOTAK 10 BUTIR & TRAY 30 BUTIR */}
-                {eggPackages.map((pkg) => {
-                  const inCart = cartItems.find((line) => line.variant === pkg.name);
-                  const qtyInCart = inCart?.quantity || 0;
-                  return (
-                    <article
-                      key={pkg.id}
-                      data-scroll-reveal
-                      className={`liquid-glass-strong group relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-8 transition-transform duration-500 hover:-translate-y-1 ${
-                        pkg.id === 'tray-30' ? 'ring-1 ring-[#cbd2b3]/30 shadow-[0_0_40px_rgba(203,210,179,0.06)]' : ''
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1 text-[10px] tracking-[.12em] text-[#cbd2b3]">
-                            {pkg.badge}
+                          {/* BADGE PILIHAN KIRI ATAS */}
+                          <span className="absolute left-3.5 top-3.5 rounded-full border border-white/20 bg-black/45 px-2.5 py-1 text-[9px] tracking-[.14em] text-white/85 backdrop-blur-md">
+                            {item.badge}
                           </span>
-                          <div className="text-right">
-                            <span className="block text-xs text-white/70">{pkg.count} Butir</span>
-                            <span className="block text-[10px] text-emerald-300">
-                              Tersedia {Math.floor(currentStock / pkg.count)} {pkg.id === 'pack-10' ? 'kotak' : 'tray'}
+                          {/* TOMBOL HOVER KANAN BAWAH */}
+                          <button
+                            type="button"
+                            onClick={item.onAdd}
+                            disabled={!item.isAvailable}
+                            aria-label={`Tambah ${item.name} ke keranjang`}
+                            className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-black opacity-0 shadow-xl transition-all duration-300 group-hover:opacity-100 disabled:opacity-0"
+                          >
+                            <Icon name="arrow-up-right" size={17} />
+                          </button>
+                        </div>
+
+                        {/* DETAIL & TYPOGRAPHY ELEGAN */}
+                        <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
+                          <div className="min-w-0 flex-1">
+                            <span className="block text-[9px] tracking-[.14em] text-white/50 uppercase">
+                              {item.code}
                             </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 aspect-[16/10] overflow-hidden rounded-2xl bg-black/40">
-                          <img
-                            src={heroProduct.image}
-                            alt={pkg.name}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        </div>
-
-                        <h3 className="mt-6 font-heading text-3xl italic text-white">{pkg.name}</h3>
-                        <p className="mt-2 text-xs font-light leading-relaxed text-white/65">{pkg.description}</p>
-                        <p className="mt-4 rounded-xl border border-white/[.08] bg-white/[.02] p-3 text-[11px] text-white/60">
-                          <span className="font-medium text-white/80">Rekomendasi: </span>
-                          {pkg.idealFor}
-                        </p>
-                      </div>
-
-                      <div className="mt-6 border-t border-white/10 pt-5">
-                        <div className="flex items-baseline justify-between">
-                          <div>
-                            <span className="block text-[9px] tracking-[.14em] text-white/45">TOTAL HARGA</span>
-                            <span className="mt-1 block font-heading text-3xl italic text-white">{formatPrice(pkg.price)}</span>
-                          </div>
-                          <span className="text-[11px] text-white/50">(@ Rp2.500 / butir)</span>
-                        </div>
-
-                        {qtyInCart > 0 && (
-                          <div className="mt-3 flex items-center justify-between rounded-xl border border-[#cbd2b3]/25 bg-[#cbd2b3]/5 px-3 py-2 text-xs">
-                            <span className="text-[#cbd2b3]">
-                              Di keranjang: {qtyInCart} {pkg.id === 'pack-10' ? 'Kotak' : 'Tray'} ({qtyInCart * pkg.count} butir)
+                            <h3 className="mt-1 font-heading text-2xl italic leading-none tracking-tight text-white sm:text-[26px]">
+                              {item.name}
+                            </h3>
+                            <div className="mt-2 flex items-baseline gap-2">
+                              <span className="text-xs font-medium text-white/85">{item.priceText}</span>
+                              <span className="text-[10px] text-white/40">({item.unitText})</span>
+                            </div>
+                            <span className={`mt-1.5 flex items-center gap-1.5 text-[11px] ${item.isAvailable ? 'text-emerald-300' : 'text-amber-200/80'}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${item.isAvailable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                              {item.stockText}
                             </span>
-                            <span className="font-heading italic text-white">{formatPrice(qtyInCart * pkg.price)}</span>
+                            {item.inCartLabel && (
+                              <span className="mt-1.5 block text-[10px] font-medium text-[#cbd2b3]">
+                                ✓ Di keranjang: {item.inCartLabel}
+                              </span>
+                            )}
                           </div>
-                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => addPackageToCart(pkg)}
-                          disabled={currentStock < pkg.count}
-                          className="liquid-glass-strong mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-medium text-white transition-all hover:bg-white/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Icon name="bag" size={15} /> {currentStock >= pkg.count ? 'Tambahkan ke Keranjang' : 'Stok Tidak Cukup'}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+                          {/* TOMBOL PLUS LINGKARAN */}
+                          <button
+                            type="button"
+                            onClick={item.onAdd}
+                            disabled={!item.isAvailable}
+                            className="liquid-glass mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/85 transition-all hover:bg-white/20 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+                            aria-label={`Tambahkan ${item.name} ke keranjang`}
+                          >
+                            <Icon name="plus" size={18} />
+                          </button>
+                        </div>
+                      </motion.article>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </section>
 
@@ -840,7 +815,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
 
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <a href="#hero" className="px-2 py-2 text-white/60 transition-colors hover:text-white">Beranda</a>
-              <a href="#paket" className="px-2 py-2 text-white/60 transition-colors hover:text-white">Pilihan Paket</a>
+              <a href="#paket" className="px-2 py-2 text-white/60 transition-colors hover:text-white">Pilihan Telur</a>
               <a href="#cara-pesan" className="px-2 py-2 text-white/60 transition-colors hover:text-white">Cara Pesan</a>
               <a href="#faq" className="px-2 py-2 text-white/60 transition-colors hover:text-white">FAQ</a>
               <a href={singleWhatsAppUrl(10, heroProduct.price)} target="_blank" rel="noopener noreferrer" className="liquid-glass-strong rounded-full px-4 py-2 text-white">
