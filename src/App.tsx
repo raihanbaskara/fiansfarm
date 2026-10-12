@@ -404,7 +404,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                   <p className="mt-3 font-heading text-3xl italic leading-none text-white">
                     {new Intl.NumberFormat('id-ID').format(currentStock)} <span className="font-body text-xs not-italic text-white/60">butir</span>
                   </p>
-                  <p className="mt-1.5 text-[11px] font-light text-white/60">
+                  <p className={`mt-1.5 text-[11px] font-light ${currentStock > 0 ? 'text-white/60' : 'text-[#a9a285]'}`}>
                     {currentStock > 0 ? 'Tersedia & Siap Kirim' : 'Stok habis hari ini'}
                   </p>
                 </div>
@@ -535,7 +535,7 @@ function Storefront({ onNavigateAdmin }: { onNavigateAdmin: () => void }) {
                               <span className="text-xs font-medium text-white/85">{item.priceText}</span>
                               <span className="text-[10px] text-white/40">({item.unitText})</span>
                             </div>
-                            <span className="mt-1.5 block text-xs text-white/45">
+                            <span className={`mt-1.5 block text-xs ${item.isAvailable ? 'text-white/45' : 'text-[#a9a285]'}`}>
                               {item.stockText}
                             </span>
                             {item.inCartLabel && (
