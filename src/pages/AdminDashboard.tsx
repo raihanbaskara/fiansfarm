@@ -18,10 +18,7 @@ type Movement = {
 
 const activityKey = 'butir-pagi-admin-activity-v2';
 const defaultStocks: Record<string, number> = {
-  'telur-ayam-negeri': 0,
   'telur-ayam-kampung': 0,
-  'telur-bebek': 0,
-  'telur-puyuh': 0,
 };
 
 const sections: { id: Section; label: string; icon: 'grid' | 'boxes' | 'history' | 'wifi' }[] = [

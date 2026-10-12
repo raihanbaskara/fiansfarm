@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react';
 
-export type IconName = 'arrow-up-right' | 'arrow-right' | 'arrow-left' | 'bag' | 'close' | 'plus' | 'minus' | 'trash' | 'play' | 'menu' | 'check' | 'sparkle' | 'egg' | 'grid' | 'boxes' | 'history' | 'wifi' | 'activity';
+export type IconName = 'arrow-up-right' | 'arrow-right' | 'arrow-left' | 'bag' | 'close' | 'plus' | 'minus' | 'trash' | 'play' | 'menu' | 'check' | 'sparkle' | 'egg' | 'grid' | 'boxes' | 'history' | 'wifi' | 'activity' | 'chevron-down' | 'shield';
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName; size?: number };
 
@@ -23,6 +23,8 @@ const paths: Record<IconName, ReactNode> = {
   history: <><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" /></>,
   wifi: <><path d="M5 9.5a11 11 0 0 1 14 0" /><path d="M8 12.5a6.5 6.5 0 0 1 8 0" /><path d="M10.5 15.5a2.5 2.5 0 0 1 3 0" /><path d="M12 19h.01" /></>,
   activity: <><path d="M3 12h4l3-8 4 16 3-8h4" /></>,
+  'chevron-down': <path d="m6 9 6 6 6-6" />,
+  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
 };
 
 export function Icon({ name, size = 20, ...props }: IconProps) {
