@@ -3,8 +3,9 @@ import type { FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '../components/Icon';
 import { products } from '../data/products';
-import { inventoryStorageKey, inventoryUpdateEvent, readInventory } from '../data/inventory';
+import { inventoryUpdateEvent, readInventory } from '../data/inventory';
 import { useIotStatus } from '../data/iotSync';
+import { getLiveStock, getLiveActivities, recordStockChange, subscribeToSupabaseRealtime } from '../data/supabaseDb';
 
 type Section = 'ringkasan' | 'stok' | 'aktivitas' | 'perangkat';
 type Source = 'sensor' | 'shopee' | 'manual';
@@ -68,12 +69,21 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   const [activityFilter, setActivityFilter] = useState<'semua' | Source>('semua');
 
   useEffect(() => {
+    getLiveStock().then(setStocks);
+    getLiveActivities().then(setMovements);
     const handleSync = () => {
-      setStocks(readInventory());
-      setMovements(readLocal(activityKey, []));
+      getLiveStock().then(setStocks);
+      getLiveActivities().then(setMovements);
     };
     window.addEventListener(inventoryUpdateEvent, handleSync);
-    return () => window.removeEventListener(inventoryUpdateEvent, handleSync);
+    const stopRealtime = subscribeToSupabaseRealtime(() => {
+      getLiveStock().then(setStocks);
+      getLiveActivities().then(setMovements);
+    });
+    return () => {
+      window.removeEventListener(inventoryUpdateEvent, handleSync);
+      if (stopRealtime) stopRealtime();
+    };
   }, []);
 
   useEffect(() => {
@@ -110,21 +120,11 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
       return false;
     }
 
-    const movement: Movement = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      productId,
-      delta,
-      source,
-      note,
-      createdAt: new Date().toISOString(),
-    };
-    const nextStocks = { ...stocks, [productId]: current + delta };
-    const nextMovements = [movement, ...(Array.isArray(movements) ? movements : [])].slice(0, 50);
-    setStocks(nextStocks);
-    setMovements(nextMovements);
-    localStorage.setItem(inventoryStorageKey, JSON.stringify(nextStocks));
-    localStorage.setItem(activityKey, JSON.stringify(nextMovements));
-    window.dispatchEvent(new Event(inventoryUpdateEvent));
+    recordStockChange(productId, delta, source, note).then(() => {
+      getLiveStock().then(setStocks);
+      setMovements(readLocal(activityKey, []));
+    });
+
     setNotice(`${product.name}: stok ${delta > 0 ? 'bertambah' : 'berkurang'} ${formatCount(Math.abs(delta))} butir.`);
     return true;
   };

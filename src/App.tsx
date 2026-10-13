@@ -8,6 +8,7 @@ import { eggPackages } from './data/packages';
 import type { EggPackage } from './data/packages';
 import { inventoryUpdateEvent, readInventory } from './data/inventory';
 import { startIotPolling } from './data/iotSync';
+import { getLiveStock, subscribeToSupabaseRealtime } from './data/supabaseDb';
 
 const StorefrontScrollMotion = lazy(() => import('./components/StorefrontScrollMotion'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -132,14 +133,21 @@ function Storefront() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   useEffect(() => {
-    const refreshInventory = () => setStocks(readInventory());
+    getLiveStock().then(setStocks);
+    const refreshInventory = () => {
+      getLiveStock().then(setStocks);
+    };
     window.addEventListener('storage', refreshInventory);
     window.addEventListener(inventoryUpdateEvent, refreshInventory);
     const stopPolling = startIotPolling(3000);
+    const stopRealtime = subscribeToSupabaseRealtime(() => {
+      getLiveStock().then(setStocks);
+    });
     return () => {
       window.removeEventListener('storage', refreshInventory);
       window.removeEventListener(inventoryUpdateEvent, refreshInventory);
       if (stopPolling) stopPolling();
+      if (stopRealtime) stopRealtime();
     };
   }, []);
 

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { inventoryStorageKey, inventoryUpdateEvent, readInventory } from './inventory';
+import { recordStockChange } from './supabaseDb';
 
 export const iotUpdateEvent = 'fiansfarm:iot-status-updated';
-const activityKey = 'butir-pagi-admin-activity-v2';
 
 export type IotStatus = {
   isNodeRedConnected: boolean;
@@ -83,26 +82,13 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
     if (prevCount >= 0 && newCount > prevCount) {
       const delta = newCount - prevCount;
       try {
-        const stocks = readInventory();
-        const currentProdStock = stocks['telur-ayam-kampung'] ?? 0;
-        const updatedStocks = { ...stocks, 'telur-ayam-kampung': currentProdStock + delta };
-        localStorage.setItem(inventoryStorageKey, JSON.stringify(updatedStocks));
-
-        // Catat aktivitas baru dari sensor
-        const rawAct = localStorage.getItem(activityKey);
-        const activities = rawAct ? JSON.parse(rawAct) : [];
-        const newMovement = {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          productId: 'telur-ayam-kampung',
+        recordStockChange(
+          'telur-ayam-kampung',
           delta,
-          source: 'sensor',
-          note: `Sensor IR conveyor mendeteksi +${delta} butir telur baru`,
-          createdAt: new Date().toISOString(),
-        };
-        localStorage.setItem(activityKey, JSON.stringify([newMovement, ...activities].slice(0, 50)));
-
+          'sensor',
+          `Sensor IR conveyor mendeteksi +${delta} butir telur baru`
+        );
         localStorage.setItem(lastCountKey, String(newCount));
-        window.dispatchEvent(new Event(inventoryUpdateEvent));
       } catch (e) {
         console.error('Gagal sinkron inventaris:', e);
       }

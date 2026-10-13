@@ -136,29 +136,43 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-// ======================== KONEKSI WIFI & MQTT (NON-BLOCKING) ==================
+// ======================== KONEKSI WIFI & MQTT (ROBUST LOGGING) =================
 void hubungkanWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
-  Serial.print("Menghubungkan ke WiFi...");
+  Serial.printf("\n[WIFI] Menghubungkan ke: %s ", WIFI_SSID);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  int attempt = 0;
+  while (WiFi.status() != WL_CONNECTED && attempt < 15) {
+    delay(500);
+    Serial.print(".");
+    attempt++;
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n[WIFI] BERHASIL TERHUBUNG!");
+    Serial.printf("[WIFI] IP ESP32: %s | Gateway: %s\n", 
+                  WiFi.localIP().toString().c_str(), 
+                  WiFi.gatewayIP().toString().c_str());
+  } else {
+    Serial.println("\n[WIFI] Menunggu koneksi di latar belakang... (Pastikan Hotspot Band 2.4 GHz)");
+  }
 }
 
 void hubungkanMQTT() {
   if (WiFi.status() != WL_CONNECTED) return;
   if (mqttClient.connected()) return;
 
-  // Coba sambung setiap 5 detik sekali tanpa membuat loop hang
-  if (millis() - lastMqttRetry > 5000) {
+  // Coba sambung setiap 3 detik sekali
+  if (millis() - lastMqttRetry > 3000) {
     lastMqttRetry = millis();
-    Serial.print("Mencoba koneksi ke MQTT Broker Node-RED...");
+    Serial.printf("[MQTT] Menghubungkan ke %s:%d ... ", MQTT_BROKER, MQTT_PORT);
     // Sambung dengan LWT (Last Will & Testament): jika ESP32 dicabut/mati, broker langsung mengirim alive: false
     if (mqttClient.connect(MQTT_CLIENT_ID, "fiansfarm/conveyor/heartbeat", 0, true, "{\"alive\":false}")) {
-      Serial.println(" BERHASIL!");
+      Serial.println("BERHASIL!");
       mqttClient.subscribe(TOPIC_CONTROL);
       tampilkanLCD();
     } else {
-      Serial.printf(" GAGAL, rc=%d\n", mqttClient.state());
+      Serial.printf("GAGAL (rc=%d)\n", mqttClient.state());
     }
   }
 }

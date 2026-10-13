@@ -102,9 +102,48 @@ export async function recordStockChange(
 }
 
 /**
+ * Mengambil riwayat log aktivitas dari Supabase (atau fallback ke localStorage)
+ */
+export async function getLiveActivities(): Promise<any[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    const rawAct = localStorage.getItem(activityKey);
+    return rawAct ? JSON.parse(rawAct) : [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('log_aktivitas')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(50);
+
+    if (error || !data) {
+      console.warn('Gagal membaca log dari Supabase:', error?.message);
+      const rawAct = localStorage.getItem(activityKey);
+      return rawAct ? JSON.parse(rawAct) : [];
+    }
+
+    const mapped = data.map((item: any) => ({
+      id: String(item.id),
+      productId: item.product_id,
+      delta: item.delta,
+      source: item.sumber,
+      note: item.catatan,
+      createdAt: item.created_at,
+    }));
+    localStorage.setItem(activityKey, JSON.stringify(mapped));
+    return mapped;
+  } catch (err) {
+    console.error('Error getLiveActivities:', err);
+    const rawAct = localStorage.getItem(activityKey);
+    return rawAct ? JSON.parse(rawAct) : [];
+  }
+}
+
+/**
  * Berlangganan perubahan data secara real-time dari Supabase
  */
-export function subscribeToSupabaseRealtime(onStockChange?: () => void) {
+export function subscribeToSupabaseRealtime(onChange?: () => void) {
   if (!isSupabaseConfigured || !supabase) return () => {};
 
   const channel = supabase
@@ -113,7 +152,15 @@ export function subscribeToSupabaseRealtime(onStockChange?: () => void) {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'stok_inventaris' },
       () => {
-        if (onStockChange) onStockChange();
+        if (onChange) onChange();
+        window.dispatchEvent(new Event(inventoryUpdateEvent));
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'log_aktivitas' },
+      () => {
+        if (onChange) onChange();
         window.dispatchEvent(new Event(inventoryUpdateEvent));
       }
     )
@@ -125,3 +172,4 @@ export function subscribeToSupabaseRealtime(onStockChange?: () => void) {
     }
   };
 }
+
