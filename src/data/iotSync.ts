@@ -5,7 +5,8 @@ export const iotUpdateEvent = 'fiansfarm:iot-status-updated';
 const activityKey = 'butir-pagi-admin-activity-v2';
 
 export type IotStatus = {
-  isConnected: boolean;
+  isNodeRedConnected: boolean;
+  isEspOnline: boolean;
   count: number;
   lastUpdated: string | null;
   peternakan: string;
@@ -13,7 +14,8 @@ export type IotStatus = {
 };
 
 let cachedStatus: IotStatus = {
-  isConnected: false,
+  isNodeRedConnected: false,
+  isEspOnline: false,
   count: 0,
   lastUpdated: null,
   peternakan: "Fian's Farm (Kabupaten Pasuruan)",
@@ -55,8 +57,11 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
     const newCount = Number(responseData.stok_terkini) || 0;
     const timeStr = responseData.waktu_update || new Date().toISOString();
 
+    const isEspAlive = Boolean(responseData.esp32_online);
+
     cachedStatus = {
-      isConnected: true,
+      isNodeRedConnected: true,
+      isEspOnline: isEspAlive,
       count: newCount,
       lastUpdated: timeStr,
       peternakan: responseData.peternakan || "Fian's Farm (Kabupaten Pasuruan)",
@@ -94,7 +99,8 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
   } else {
     cachedStatus = {
       ...cachedStatus,
-      isConnected: false,
+      isNodeRedConnected: false,
+      isEspOnline: false,
       error: lastError || 'Node-RED tidak merespons',
     };
   }

@@ -152,7 +152,8 @@ void hubungkanMQTT() {
   if (millis() - lastMqttRetry > 5000) {
     lastMqttRetry = millis();
     Serial.print("Mencoba koneksi ke MQTT Broker Node-RED...");
-    if (mqttClient.connect(MQTT_CLIENT_ID)) {
+    // Sambung dengan LWT (Last Will & Testament): jika ESP32 dicabut/mati, broker langsung mengirim alive: false
+    if (mqttClient.connect(MQTT_CLIENT_ID, "fiansfarm/conveyor/heartbeat", 0, true, "{\"alive\":false}")) {
       Serial.println(" BERHASIL!");
       mqttClient.subscribe(TOPIC_CONTROL);
       tampilkanLCD();
@@ -252,8 +253,8 @@ void loop() {
     }
   }
 
-  // 3. Heartbeat berkala ke Node-RED setiap 10 detik (Status Liveness)
-  if (millis() - lastHeartbeat > 10000) {
+  // 3. Heartbeat berkala ke Node-RED setiap 3 detik (Status Liveness Perangkat Nyata)
+  if (millis() - lastHeartbeat > 3000) {
     lastHeartbeat = millis();
     if (mqttClient.connected()) {
       char hbPayload[80];

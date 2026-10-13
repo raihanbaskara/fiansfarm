@@ -155,8 +155,8 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
       {item.label}
       {item.id === 'perangkat' && (
         <span
-          className={`ml-auto h-2 w-2 rounded-full ${iot.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-300'}`}
-          aria-label={iot.isConnected ? 'Terhubung' : 'Belum terhubung'}
+          className={`ml-auto h-2 w-2 rounded-full ${iot.isEspOnline ? 'bg-emerald-400 animate-pulse' : iot.isNodeRedConnected ? 'bg-amber-400' : 'bg-red-400'}`}
+          aria-label={iot.isEspOnline ? 'ESP32 Online' : 'ESP32 Offline'}
         />
       )}
     </button>
@@ -305,34 +305,41 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
                       <p className="text-[9px] tracking-[.16em] text-white/40">PERANGKAT #CONVEYOR-01</p>
                       <h2 id="sensor-heading" className="mt-2 font-heading text-3xl italic">Conveyor telur</h2>
                     </div>
-                    {iot.isConnected ? (
+                    {iot.isEspOnline ? (
                       <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Online · Terhubung ke Node-RED
+                        Online · ESP32 Conveyor Terhubung
+                      </span>
+                    ) : iot.isNodeRedConnected ? (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-[10px] text-amber-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        Siaga · ESP32 Mati / Terputus
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-amber-200/[.07] px-3 py-2 text-[10px] text-amber-100/80">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
-                        Offline · Menghubungkan ke Node-RED...
+                      <span className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-[10px] text-red-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                        Offline · Node-RED Belum Aktif
                       </span>
                     )}
                   </div>
                   <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                    <DeviceInfo label="Sensor" value="IR FC-51 (GPIO 4)" />
-                    <DeviceInfo label="Pengendali" value="ESP32 (Conveyor Fian's Farm)" />
-                    <DeviceInfo label="Koneksi" value="WiFi Hotspot · MQTT Aedes Port 1883" />
+                    <DeviceInfo label="Status ESP32" value={iot.isEspOnline ? "Aktif · Mengirim Data" : "Mati / Belum Terhubung"} />
                     <DeviceInfo label="Hitungan conveyor" value={`${formatCount(iot.count)} butir`} />
+                    <DeviceInfo label="Sensor" value="IR FC-51 (GPIO 4)" />
+                    <DeviceInfo label="Koneksi MQTT" value="Aedes Port 1883 (Hotspot)" />
                   </div>
                   <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.025] p-4">
-                    <p className="text-xs font-medium text-white/80">Sinkronisasi Otomatis</p>
+                    <p className="text-xs font-medium text-white/80">Pemantauan Perangkat Nyata (Live Hardware)</p>
                     <p className="mt-1.5 text-xs leading-relaxed text-white/50">
-                      Setiap telur yang terdeteksi sensor IR di conveyor langsung menambah stok etalase toko secara otomatis tanpa perlu input manual.
+                      Sistem memverifikasi heartbeat dari fisik ESP32 setiap beberapa detik. Ketika ESP32 dicabut atau dimatikan, status akan otomatis beralih ke "Mati / Terputus".
                     </p>
                   </div>
-                  {iot.isConnected ? (
-                    <div className="mt-5 rounded-xl border border-emerald-400/15 bg-emerald-500/[.04] p-4">
+                  {iot.isNodeRedConnected ? (
+                    <div className={`mt-5 rounded-xl border p-4 ${iot.isEspOnline ? 'border-emerald-400/15 bg-emerald-500/[.04]' : 'border-amber-300/15 bg-amber-400/[.04]'}`}>
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-emerald-300">Status Server: Aktif (Port 1883 & 1880)</p>
+                        <p className={`text-xs font-medium ${iot.isEspOnline ? 'text-emerald-300' : 'text-amber-200'}`}>
+                          {iot.isEspOnline ? 'ESP32 Beroperasi Normal' : 'Menunggu ESP32 Dicolokkan / Dinyalakan'}
+                        </p>
                         <button
                           type="button"
                           onClick={() => iot.refresh()}
@@ -342,14 +349,14 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
                         </button>
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-white/60">
-                        {iot.peternakan} · Terakhir diperbarui: {iot.lastUpdated ? formatTime(iot.lastUpdated) : 'Baru saja'}
+                        {iot.peternakan} · Update: {iot.lastUpdated ? formatTime(iot.lastUpdated) : 'Baru saja'}
                       </p>
                     </div>
                   ) : (
                     <div className="mt-5 rounded-xl border border-amber-200/10 bg-amber-100/[.035] p-4">
                       <p className="text-xs font-medium text-amber-100/80">Menunggu Node-RED</p>
                       <p className="mt-1 text-xs leading-relaxed text-white/55">
-                        Pastikan Node-RED sedang berjalan di laptop pada port 1880. Sistem otomatis mencoba terhubung setiap 3 detik.
+                        Pastikan Node-RED sedang berjalan di laptop pada port 1880.
                       </p>
                     </div>
                   )}
