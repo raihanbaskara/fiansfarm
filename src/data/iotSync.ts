@@ -22,8 +22,18 @@ let cachedStatus: IotStatus = {
   error: null,
 };
 
+const lastCountKey = 'fiansfarm-last-conveyor-count';
+
+function getSavedConveyorCount(): number {
+  try {
+    const val = localStorage.getItem(lastCountKey);
+    return val !== null ? Number(val) : -1;
+  } catch {
+    return -1;
+  }
+}
+
 let isPolling = false;
-let previousConveyorCount = -1;
 
 export async function fetchConveyorStock(): Promise<IotStatus> {
   const nodeRedUrls = [
@@ -69,8 +79,9 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
     };
 
     // Sinkronisasi otomatis ke inventaris dan riwayat aktivitas jika hitungan bertambah
-    if (previousConveyorCount >= 0 && newCount > previousConveyorCount) {
-      const delta = newCount - previousConveyorCount;
+    const prevCount = getSavedConveyorCount();
+    if (prevCount >= 0 && newCount > prevCount) {
+      const delta = newCount - prevCount;
       try {
         const stocks = readInventory();
         const currentProdStock = stocks['telur-ayam-kampung'] ?? 0;
@@ -90,12 +101,15 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
         };
         localStorage.setItem(activityKey, JSON.stringify([newMovement, ...activities].slice(0, 50)));
 
+        localStorage.setItem(lastCountKey, String(newCount));
         window.dispatchEvent(new Event(inventoryUpdateEvent));
       } catch (e) {
         console.error('Gagal sinkron inventaris:', e);
       }
+    } else if (prevCount < 0) {
+      // Inisialisasi awal saat pertama kali tersambung
+      localStorage.setItem(lastCountKey, String(newCount));
     }
-    previousConveyorCount = newCount;
   } else {
     cachedStatus = {
       ...cachedStatus,

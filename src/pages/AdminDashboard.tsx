@@ -77,15 +77,6 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(inventoryStorageKey, JSON.stringify(stocks));
-    window.dispatchEvent(new Event(inventoryUpdateEvent));
-  }, [stocks]);
-
-  useEffect(() => {
-    localStorage.setItem(activityKey, JSON.stringify(movements));
-  }, [movements]);
-
-  useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(''), 2600);
     return () => window.clearTimeout(timer);
@@ -127,8 +118,13 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
       note,
       createdAt: new Date().toISOString(),
     };
-    setStocks((currentStocks) => ({ ...currentStocks, [productId]: current + delta }));
-    setMovements((currentMovements) => [movement, ...(Array.isArray(currentMovements) ? currentMovements : [])].slice(0, 50));
+    const nextStocks = { ...stocks, [productId]: current + delta };
+    const nextMovements = [movement, ...(Array.isArray(movements) ? movements : [])].slice(0, 50);
+    setStocks(nextStocks);
+    setMovements(nextMovements);
+    localStorage.setItem(inventoryStorageKey, JSON.stringify(nextStocks));
+    localStorage.setItem(activityKey, JSON.stringify(nextMovements));
+    window.dispatchEvent(new Event(inventoryUpdateEvent));
     setNotice(`${product.name}: stok ${delta > 0 ? 'bertambah' : 'berkurang'} ${formatCount(Math.abs(delta))} butir.`);
     return true;
   };
