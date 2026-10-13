@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '../components/Icon';
 import { products } from '../data/products';
 import { inventoryStorageKey, inventoryUpdateEvent, readInventory } from '../data/inventory';
+import { useIotStatus } from '../data/iotSync';
 
 type Section = 'ringkasan' | 'stok' | 'aktivitas' | 'perangkat';
 type Source = 'sensor' | 'shopee' | 'manual';
@@ -58,12 +59,22 @@ function sourceLabel(source: Source) {
 
 function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   const [section, setSection] = useState<Section>('ringkasan');
+  const iot = useIotStatus();
   const [stocks, setStocks] = useState<Record<string, number>>(() => readInventory());
   const [movements, setMovements] = useState<Movement[]>(() => readLocal(activityKey, []));
   const [saleProduct, setSaleProduct] = useState(products[0]?.id ?? '');
   const [saleQuantity, setSaleQuantity] = useState('1');
   const [notice, setNotice] = useState('');
   const [activityFilter, setActivityFilter] = useState<'semua' | Source>('semua');
+
+  useEffect(() => {
+    const handleSync = () => {
+      setStocks(readInventory());
+      setMovements(readLocal(activityKey, []));
+    };
+    window.addEventListener(inventoryUpdateEvent, handleSync);
+    return () => window.removeEventListener(inventoryUpdateEvent, handleSync);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(inventoryStorageKey, JSON.stringify(stocks));
@@ -142,7 +153,12 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
     >
       <Icon name={item.icon} size={18} className={section === item.id ? 'text-white' : 'text-white/50 group-hover:text-white/85'} />
       {item.label}
-      {item.id === 'perangkat' && <span className="ml-auto h-2 w-2 rounded-full bg-amber-300" aria-label="Belum terhubung" />}
+      {item.id === 'perangkat' && (
+        <span
+          className={`ml-auto h-2 w-2 rounded-full ${iot.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-300'}`}
+          aria-label={iot.isConnected ? 'Terhubung' : 'Belum terhubung'}
+        />
+      )}
     </button>
   ));
 
@@ -284,19 +300,66 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
             {section === 'perangkat' && (
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,.9fr)]">
                 <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7" aria-labelledby="sensor-heading">
-                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[9px] tracking-[.16em] text-white/40">PERANGKAT #CONVEYOR-01</p><h2 id="sensor-heading" className="mt-2 font-heading text-3xl italic">Conveyor telur</h2></div><span className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-amber-200/[.07] px-3 py-2 text-[10px] text-amber-100/80"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" />Offline · menunggu koneksi</span></div>
-                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                    <DeviceInfo label="Sensor" value="IR counter" />
-                    <DeviceInfo label="Pengendali" value="ESP32 · rencana" />
-                    <DeviceInfo label="Koneksi" value="Wi-Fi / MQTT · rencana" />
-                    <DeviceInfo label="Hitungan terakhir" value="Belum ada data" />
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[9px] tracking-[.16em] text-white/40">PERANGKAT #CONVEYOR-01</p>
+                      <h2 id="sensor-heading" className="mt-2 font-heading text-3xl italic">Conveyor telur</h2>
+                    </div>
+                    {iot.isConnected ? (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Online · Terhubung ke Node-RED
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-amber-200/[.07] px-3 py-2 text-[10px] text-amber-100/80">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                        Offline · Menghubungkan ke Node-RED...
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.025] p-4"><p className="text-xs font-medium text-white/80">Alur ketika perangkat siap</p><p className="mt-1.5 text-xs leading-relaxed text-white/50">Sensor mendeteksi telur → perangkat mengirim event → backend mencatat event satu kali → stok bertambah satu butir dan aktivitas tersimpan.</p></div>
-                  <div className="mt-5 rounded-xl border border-amber-200/10 bg-amber-100/[.035] p-4"><p className="text-xs font-medium text-amber-100/80">Perangkat belum terhubung</p><p className="mt-1 text-xs leading-relaxed text-white/55">Hitungan telur akan masuk otomatis setelah conveyor mengirim data ke server.</p></div>
+                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                    <DeviceInfo label="Sensor" value="IR FC-51 (GPIO 4)" />
+                    <DeviceInfo label="Pengendali" value="ESP32 (Conveyor Fian's Farm)" />
+                    <DeviceInfo label="Koneksi" value="WiFi Hotspot · MQTT Aedes Port 1883" />
+                    <DeviceInfo label="Hitungan conveyor" value={`${formatCount(iot.count)} butir`} />
+                  </div>
+                  <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.025] p-4">
+                    <p className="text-xs font-medium text-white/80">Sinkronisasi Otomatis</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-white/50">
+                      Setiap telur yang terdeteksi sensor IR di conveyor langsung menambah stok etalase toko secara otomatis tanpa perlu input manual.
+                    </p>
+                  </div>
+                  {iot.isConnected ? (
+                    <div className="mt-5 rounded-xl border border-emerald-400/15 bg-emerald-500/[.04] p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-emerald-300">Status Server: Aktif (Port 1883 & 1880)</p>
+                        <button
+                          type="button"
+                          onClick={() => iot.refresh()}
+                          className="rounded-lg bg-white/10 px-2.5 py-1 text-[10px] text-white/80 hover:bg-white/20 transition-colors"
+                        >
+                          Refresh data
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-white/60">
+                        {iot.peternakan} · Terakhir diperbarui: {iot.lastUpdated ? formatTime(iot.lastUpdated) : 'Baru saja'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-5 rounded-xl border border-amber-200/10 bg-amber-100/[.035] p-4">
+                      <p className="text-xs font-medium text-amber-100/80">Menunggu Node-RED</p>
+                      <p className="mt-1 text-xs leading-relaxed text-white/55">
+                        Pastikan Node-RED sedang berjalan di laptop pada port 1880. Sistem otomatis mencoba terhubung setiap 3 detik.
+                      </p>
+                    </div>
+                  )}
                 </section>
                 <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7" aria-labelledby="iot-activity-heading">
-                  <h2 id="iot-activity-heading" className="font-heading text-2xl italic">Event sensor terakhir</h2><p className="mt-1 text-xs text-white/45">Data hitungan yang diterima dari perangkat.</p>
-                  <div className="mt-5"><ActivityList movements={movements.filter((item) => item.source === 'sensor').slice(0, 6)} emptyMessage="Belum ada event sensor yang diterima." /></div>
+                  <h2 id="iot-activity-heading" className="font-heading text-2xl italic">Event sensor terakhir</h2>
+                  <p className="mt-1 text-xs text-white/45">Data hitungan telur yang diterima dari sensor conveyor.</p>
+                  <div className="mt-5">
+                    <ActivityList movements={movements.filter((item) => item.source === 'sensor').slice(0, 6)} emptyMessage="Belum ada event sensor yang diterima. Hitungan akan masuk otomatis saat telur lewat di conveyor." />
+                  </div>
                 </section>
               </div>
             )}

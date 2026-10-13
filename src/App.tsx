@@ -7,6 +7,7 @@ import { products } from './data/products';
 import { eggPackages } from './data/packages';
 import type { EggPackage } from './data/packages';
 import { inventoryUpdateEvent, readInventory } from './data/inventory';
+import { startIotPolling } from './data/iotSync';
 
 const StorefrontScrollMotion = lazy(() => import('./components/StorefrontScrollMotion'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -134,9 +135,11 @@ function Storefront() {
     const refreshInventory = () => setStocks(readInventory());
     window.addEventListener('storage', refreshInventory);
     window.addEventListener(inventoryUpdateEvent, refreshInventory);
+    const stopPolling = startIotPolling(3000);
     return () => {
       window.removeEventListener('storage', refreshInventory);
       window.removeEventListener(inventoryUpdateEvent, refreshInventory);
+      if (stopPolling) stopPolling();
     };
   }, []);
 
