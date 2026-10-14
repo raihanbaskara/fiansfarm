@@ -143,9 +143,14 @@ function Storefront() {
     const stopRealtime = subscribeToSupabaseRealtime(() => {
       getLiveStock().then(setStocks);
     });
+    const liveInterval = setInterval(() => {
+      getLiveStock().then(setStocks);
+    }, 3000);
+
     return () => {
       window.removeEventListener('storage', refreshInventory);
       window.removeEventListener(inventoryUpdateEvent, refreshInventory);
+      clearInterval(liveInterval);
       if (stopPolling) stopPolling();
       if (stopRealtime) stopRealtime();
     };

@@ -80,8 +80,14 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
       getLiveStock().then(setStocks);
       getLiveActivities().then(setMovements);
     });
+    const liveInterval = setInterval(() => {
+      getLiveStock().then(setStocks);
+      getLiveActivities().then(setMovements);
+    }, 3000);
+
     return () => {
       window.removeEventListener(inventoryUpdateEvent, handleSync);
+      clearInterval(liveInterval);
       if (stopRealtime) stopRealtime();
     };
   }, []);
