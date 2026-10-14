@@ -52,18 +52,16 @@ unsigned long lastMqttRetry = 0;
 unsigned long lastHeartbeat = 0;
 
 // ======================== FUNGSI DRIVER MOTOR =================================
-void startMotor(int speed) {
+void startMotor() {
   digitalWrite(MOTOR_IN1, HIGH);
   digitalWrite(MOTOR_IN2, LOW);
-  ledcWrite(MOTOR_ENA, constrain(speed, 0, 255));
   motorRunning = true;
-  Serial.printf("[MOTOR] Berjalan dengan kecepatan: %d\n", speed);
+  Serial.println("[MOTOR] Berjalan (Konstan)");
 }
 
 void stopMotor() {
   digitalWrite(MOTOR_IN1, LOW);
   digitalWrite(MOTOR_IN2, LOW);
-  ledcWrite(MOTOR_ENA, 0);
   motorRunning = false;
   Serial.println("[MOTOR] Berhenti");
 }
@@ -122,15 +120,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (String(topic) == TOPIC_CONTROL) {
     if (message.equalsIgnoreCase("START")) {
-      startMotor(motorSpeed);
+      startMotor();
     } else if (message.equalsIgnoreCase("STOP") || message.equalsIgnoreCase("PAUSE")) {
       stopMotor();
     } else if (message.equalsIgnoreCase("RESET")) {
       eggCount = 0;
       Serial.println("[COUNT] Hitungan di-reset ke 0");
-    } else if (message.toInt() > 0 && message.toInt() <= 255) {
-      motorSpeed = message.toInt();
-      if (motorRunning) startMotor(motorSpeed);
     }
     tampilkanLCD();
   }
@@ -185,13 +180,9 @@ void setup() {
   // Inisialisasi Pin IR Sensor
   pinMode(IR_PIN, INPUT_PULLUP);
 
-  // Inisialisasi Pin Motor
+  // Inisialisasi Pin Motor (IN1 & IN2)
   pinMode(MOTOR_IN1, OUTPUT);
   pinMode(MOTOR_IN2, OUTPUT);
-  pinMode(MOTOR_ENA, OUTPUT);
-
-  // Konfigurasi PWM ESP32 Core 3.x (ledcAttach)
-  ledcAttach(MOTOR_ENA, PWM_FREQ, PWM_RESOLUTION);
 
   // Matikan motor dulu saat awal menyala
   stopMotor();
@@ -219,8 +210,8 @@ void setup() {
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
 
-  // Jalankan motor conveyor perlahan
-  startMotor(motorSpeed);
+  // Jalankan motor conveyor
+  startMotor();
   tampilkanLCD();
   Serial.println("[SISTEM] Conveyor Siap Digunakan!");
 }
