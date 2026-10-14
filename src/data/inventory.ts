@@ -2,7 +2,7 @@ export const inventoryStorageKey = 'butir-pagi-admin-stock-v2';
 export const inventoryUpdateEvent = 'butir-pagi:inventory-updated';
 
 export const defaultStocks: Record<string, number> = {
-  'telur-ayam-kampung': 150,
+  'telur-ayam-kampung': 99,
 };
 
 export function readInventory(): Record<string, number> {

@@ -6,6 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 
+  !supabaseAnonKey.startsWith('sb_secret_') &&
   supabaseUrl !== 'https://your-project-id.supabase.co' &&
   !supabaseUrl.includes('placeholder')
 );

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { recordStockChange } from './supabaseDb';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export const iotUpdateEvent = 'fiansfarm:iot-status-updated';
 
@@ -98,36 +97,29 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
       localStorage.setItem(lastCountKey, String(newCount));
     }
   } else {
-    // Jika akses ke localhost:1880 diblokir browser (misal di Vercel), gunakan status dari Supabase Cloud
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: logs } = await supabase
-          .from('log_aktivitas')
-          .select('*')
-          .eq('sumber', 'sensor')
-          .order('id', { ascending: false })
-          .limit(1);
-
-        if (logs && logs.length > 0) {
-          const lastLog = logs[0];
-          const lastTime = new Date(lastLog.created_at).getTime();
-          // Dianggap aktif jika ada aktivitas sensor dalam 60 detik terakhir
-          const isAlive = (Date.now() - lastTime) < 60000;
-
+    // Jika akses ke localhost:1880 tidak tersedia (misal di Vercel), gunakan status dari backend /api/stock
+    try {
+      const res = await fetch('/api/stock', {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.success) {
           cachedStatus = {
             isNodeRedConnected: true,
-            isEspOnline: isAlive,
-            count: getSavedConveyorCount() > 0 ? getSavedConveyorCount() : 96,
-            lastUpdated: lastLog.created_at,
+            isEspOnline: Boolean(json.espOnline),
+            count: Number(json.available) || 99,
+            lastUpdated: json.lastUpdated || new Date().toISOString(),
             peternakan: "Fian's Farm (Kabupaten Pasuruan)",
             error: null,
           };
           window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
           return cachedStatus;
         }
-      } catch {
-        // Fallback ke error di bawah
       }
+    } catch {
+      // Lanjut ke fallback error di bawah
     }
 
     cachedStatus = {

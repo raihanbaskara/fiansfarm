@@ -4,39 +4,54 @@ import { defaultStocks, inventoryStorageKey, inventoryUpdateEvent, readInventory
 const activityKey = 'butir-pagi-admin-activity-v2';
 
 /**
- * Mengambil stok terkini dari Supabase (atau fallback ke localStorage jika belum terhubung)
+ * Mengambil stok terkini dari backend API (/api/stock -> Supabase Cloud)
+ * dengan fallback ke direct Supabase client atau localStorage
  */
 export async function getLiveStock(): Promise<Record<string, number>> {
-  if (!isSupabaseConfigured || !supabase) {
-    return readInventory();
-  }
-
+  // 1. Coba fetch dari backend serverless route /api/stock (BFF pattern)
   try {
-    const { data, error } = await supabase
-      .from('stok_inventaris')
-      .select('id_produk, stok_tersedia');
-
-    if (error || !data) {
-      console.warn('Gagal membaca stok dari Supabase, menggunakan lokal:', error?.message);
-      return readInventory();
-    }
-
-    const stockMap: Record<string, number> = { ...defaultStocks };
-    data.forEach((row: any) => {
-      stockMap[row.id_produk] = row.stok_tersedia;
+    const res = await fetch('/api/stock', {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
     });
-
-    // Simpan salinan lokal untuk cache
-    localStorage.setItem(inventoryStorageKey, JSON.stringify(stockMap));
-    return stockMap;
-  } catch (err) {
-    console.error('Error getLiveStock:', err);
-    return readInventory();
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.stocks) {
+        const stockMap: Record<string, number> = { ...defaultStocks, ...json.stocks };
+        localStorage.setItem(inventoryStorageKey, JSON.stringify(stockMap));
+        return stockMap;
+      }
+    }
+  } catch (apiErr) {
+    // Jalankan fallback di bawah jika /api/stock gagal
   }
+
+  // 2. Fallback direct Supabase client jika terkonfigurasi
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('stok_inventaris')
+        .select('id_produk, stok_tersedia');
+
+      if (!error && data && data.length > 0) {
+        const stockMap: Record<string, number> = { ...defaultStocks };
+        data.forEach((row: any) => {
+          stockMap[row.id_produk] = row.stok_tersedia;
+        });
+        localStorage.setItem(inventoryStorageKey, JSON.stringify(stockMap));
+        return stockMap;
+      }
+    } catch {
+      // lanjut ke fallback local
+    }
+  }
+
+  // 3. Fallback terakhir: localStorage
+  return readInventory();
 }
 
 /**
- * Mencatat perubahan stok ke Supabase dan tabel log_aktivitas
+ * Mencatat perubahan stok ke backend /api/stock dan Supabase Cloud
  */
 export async function recordStockChange(
   productId: string,
@@ -65,13 +80,27 @@ export async function recordStockChange(
   localStorage.setItem(activityKey, JSON.stringify([localMovement, ...activities].slice(0, 50)));
   window.dispatchEvent(new Event(inventoryUpdateEvent));
 
+  // Kirim ke backend /api/stock
+  try {
+    const res = await fetch('/api/stock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, delta, source, note }),
+    });
+    if (res.ok) {
+      return true;
+    }
+  } catch (e) {
+    console.warn('Gagal POST ke /api/stock, mencoba fallback direct supabase:', e);
+  }
+
+  // Fallback direct Supabase jika ada client
   if (!isSupabaseConfigured || !supabase) {
     return true;
   }
 
   try {
-    // 1. Update stok di Supabase
-    const { error: stockErr } = await supabase
+    await supabase
       .from('stok_inventaris')
       .update({ 
         stok_tersedia: newStock, 
@@ -79,10 +108,7 @@ export async function recordStockChange(
       })
       .eq('id_produk', productId);
 
-    if (stockErr) console.error('Gagal update stok di Supabase:', stockErr.message);
-
-    // 2. Tambah log aktivitas di Supabase
-    const { error: logErr } = await supabase
+    await supabase
       .from('log_aktivitas')
       .insert({
         product_id: productId,
@@ -92,52 +118,62 @@ export async function recordStockChange(
         created_at: new Date().toISOString(),
       });
 
-    if (logErr) console.error('Gagal simpan log di Supabase:', logErr.message);
-
     return true;
-  } catch (err) {
-    console.error('Error recordStockChange:', err);
+  } catch {
     return false;
   }
 }
 
 /**
- * Mengambil riwayat log aktivitas dari Supabase (atau fallback ke localStorage)
+ * Mengambil riwayat log aktivitas dari /api/stock atau Supabase Cloud
  */
 export async function getLiveActivities(): Promise<any[]> {
-  if (!isSupabaseConfigured || !supabase) {
-    const rawAct = localStorage.getItem(activityKey);
-    return rawAct ? JSON.parse(rawAct) : [];
-  }
-
+  // 1. Coba fetch dari backend /api/stock
   try {
-    const { data, error } = await supabase
-      .from('log_aktivitas')
-      .select('*')
-      .order('id', { ascending: false })
-      .limit(50);
-
-    if (error || !data) {
-      console.warn('Gagal membaca log dari Supabase:', error?.message);
-      const rawAct = localStorage.getItem(activityKey);
-      return rawAct ? JSON.parse(rawAct) : [];
+    const res = await fetch('/api/stock', {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && Array.isArray(json.activities)) {
+        localStorage.setItem(activityKey, JSON.stringify(json.activities));
+        return json.activities;
+      }
     }
-
-    const mapped = data.map((item: any) => ({
-      id: String(item.id),
-      productId: item.product_id,
-      delta: item.delta,
-      source: item.sumber,
-      note: item.catatan,
-      createdAt: item.created_at,
-    }));
-    localStorage.setItem(activityKey, JSON.stringify(mapped));
-    return mapped;
-  } catch (err) {
-    console.error('Error getLiveActivities:', err);
-    const rawAct = localStorage.getItem(activityKey);
-    return rawAct ? JSON.parse(rawAct) : [];
+  } catch {
+    // lanjut ke fallback
   }
+
+  // 2. Fallback direct Supabase client
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('log_aktivitas')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(50);
+
+      if (!error && data) {
+        const mapped = data.map((item: any) => ({
+          id: String(item.id),
+          productId: item.product_id,
+          delta: item.delta,
+          source: item.sumber,
+          note: item.catatan,
+          createdAt: item.created_at,
+        }));
+        localStorage.setItem(activityKey, JSON.stringify(mapped));
+        return mapped;
+      }
+    } catch {
+      // lanjut ke fallback
+    }
+  }
+
+  // 3. Fallback localStorage
+  const rawAct = localStorage.getItem(activityKey);
+  return rawAct ? JSON.parse(rawAct) : [];
 }
 
 /**
@@ -146,30 +182,33 @@ export async function getLiveActivities(): Promise<any[]> {
 export function subscribeToSupabaseRealtime(onChange?: () => void) {
   if (!isSupabaseConfigured || !supabase) return () => {};
 
-  const channel = supabase
-    .channel('fiansfarm-live-sync')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'stok_inventaris' },
-      () => {
-        if (onChange) onChange();
-        window.dispatchEvent(new Event(inventoryUpdateEvent));
-      }
-    )
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'log_aktivitas' },
-      () => {
-        if (onChange) onChange();
-        window.dispatchEvent(new Event(inventoryUpdateEvent));
-      }
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel('fiansfarm-live-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'stok_inventaris' },
+        () => {
+          if (onChange) onChange();
+          window.dispatchEvent(new Event(inventoryUpdateEvent));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'log_aktivitas' },
+        () => {
+          if (onChange) onChange();
+          window.dispatchEvent(new Event(inventoryUpdateEvent));
+        }
+      )
+      .subscribe();
 
-  return () => {
-    if (supabase) {
-      supabase.removeChannel(channel);
-    }
-  };
+    return () => {
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
+  } catch {
+    return () => {};
+  }
 }
-
