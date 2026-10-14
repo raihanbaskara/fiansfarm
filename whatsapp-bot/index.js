@@ -131,12 +131,17 @@ const tools = [
 
 const systemInstruction = `
 Kamu adalah "Baskara AI", Asisten Cerdas operasional peternakan telur ayam kampung Fian's Farm di Pasuruan.
-Tugas utamamu adalah membantu mitra peternak dan pemilik peternakan mengelola stok telur, mencatat penjualan offline, dan menjawab pertanyaan operasional.
+Tugas utamamu adalah membantu mitra peternak dan pemilik peternakan mengelola stok telur, memantau kondisi mesin conveyor sortir telur, mencatat penjualan offline, dan menjawab pertanyaan operasional.
 
 Kepribadian:
 - Ramah, sopan, bersahabat, praktis khas suasana peternakan pedesaan Jawa Timur.
 - Gunakan bahasa Indonesia yang santai dan hangat (boleh sesekali menggunakan sapaan akrab seperti "Mas", "Pak", "Nggih").
-- Jika mitra bertanya stok atau ingin mencatat penjualan, SELALU gunakan tool yang tersedia untuk memeriksa atau memperbarui database nyata.
+- Jika mitra bertanya stok atau ingin mencatat penjualan, SELALU gunakan tool yang sesuai untuk memeriksa atau memperbarui database nyata.
+- Jika mitra bertanya tentang status conveyor, sensor, ESP32, atau kondisi mesin sortir telur:
+  * SELALU panggil tool "cek_status_conveyor".
+  * Jelaskan apakah sistem sedang AKTIF menyortir telur atau sedang STANDBY/MATI.
+  * Berikan informasi kapan sensor terakhir kali mendeteksi telur dan berapa stok telur di gudang saat ini.
+  * Berikan saran ramah jika mesin standby (misal: jika ingin mulai sortir panen baru, ingatkan untuk memastikan adaptor 12V motor menyala, hotspot laptop aktif, dan Node-RED berjalan).
 - Berikan balasan yang ringkas dan jelas tanpa bertele-tele.
 `;
 
@@ -207,9 +212,46 @@ async function executeTool(name, args) {
     }
 
     if (name === 'cek_status_conveyor') {
-      const res = await fetch(`${SUPABASE_URL}/riwayat_conveyor?order=id.desc&limit=1`, { headers });
-      const data = await res.json();
-      return { status: data[0]?.status_mesin || 'STANDBY', hitungan_terakhir: data[0]?.total_hitungan || 0 };
+      try {
+        const [sensorRes, stockRes] = await Promise.all([
+          fetch(`${SUPABASE_URL}/log_aktivitas?sumber=eq.sensor&order=id.desc&limit=1`, { headers }),
+          fetch(`${SUPABASE_URL}/stok_inventaris?id_produk=eq.telur-ayam-kampung`, { headers })
+        ]);
+        const sensorData = await sensorRes.json();
+        const stockData = await stockRes.json();
+
+        const lastSensor = sensorData[0];
+        let isEspOnline = false;
+        let lastSeenText = 'Belum ada deteksi telur tercatat';
+        let diffMinutes = 999;
+
+        if (lastSensor && lastSensor.created_at) {
+          const lastTime = new Date(lastSensor.created_at).getTime();
+          diffMinutes = Math.max(0, Math.round((Date.now() - lastTime) / 60000));
+          if (diffMinutes <= 2) {
+            isEspOnline = true;
+            lastSeenText = `Baru saja (${diffMinutes} menit lalu)`;
+          } else if (diffMinutes < 60) {
+            lastSeenText = `${diffMinutes} menit yang lalu`;
+          } else {
+            const hours = Math.floor(diffMinutes / 60);
+            const mins = diffMinutes % 60;
+            lastSeenText = `${hours} jam ${mins} menit yang lalu`;
+          }
+        }
+
+        return {
+          status_mesin_esp32: isEspOnline ? 'AKTIF / SEDANG MENYORTIR' : 'STANDBY / MATI (Tidak ada aktivitas sensor baru)',
+          esp32_terakhir_mendeteksi_telur: lastSeenText,
+          selisih_waktu_menit: diffMinutes,
+          stok_tersedia_gudang: stockData[0]?.stok_tersedia || 0,
+          catatan_teknis: isEspOnline
+            ? 'Conveyor dan sensor IR sedang aktif menghitung telur secara realtime.'
+            : 'Conveyor sedang standby. Jika mesin seharusnya menyala tapi terdeteksi standby, pastikan adaptor 12V L298N tercolok, hotspot 2.4 GHz laptop aktif, dan Node-RED menyala.'
+        };
+      } catch (err) {
+        return { status: 'STANDBY', error: err.message };
+      }
     }
   } catch (err) {
     console.error('Error executeTool:', err);
