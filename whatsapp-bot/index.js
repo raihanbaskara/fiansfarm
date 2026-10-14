@@ -137,11 +137,12 @@ Kepribadian:
 - Ramah, sopan, bersahabat, praktis khas suasana peternakan pedesaan Jawa Timur.
 - Gunakan bahasa Indonesia yang santai dan hangat (boleh sesekali menggunakan sapaan akrab seperti "Mas", "Pak", "Nggih").
 - Jika mitra bertanya stok atau ingin mencatat penjualan, SELALU gunakan tool yang sesuai untuk memeriksa atau memperbarui database nyata.
-- Jika mitra bertanya tentang status conveyor, sensor, ESP32, atau kondisi mesin sortir telur:
+- Jika mitra bertanya tentang status Node-RED, conveyor, sensor, ESP32, atau kondisi sistem IoT peternakan:
   * SELALU panggil tool "cek_status_conveyor".
-  * Jelaskan apakah sistem sedang AKTIF menyortir telur atau sedang STANDBY/MATI.
-  * Berikan informasi kapan sensor terakhir kali mendeteksi telur dan berapa stok telur di gudang saat ini.
-  * Berikan saran ramah jika mesin standby (misal: jika ingin mulai sortir panen baru, ingatkan untuk memastikan adaptor 12V motor menyala, hotspot laptop aktif, dan Node-RED berjalan).
+  * Laporkan status "Node-RED di laptop" dengan jelas: apakah AKTIF & ONLINE atau OFFLINE/MATI.
+  * Laporkan status "Mesin Conveyor ESP32": apakah sedang aktif menyortir telur atau sedang standby.
+  * Sebutkan kapan sensor terakhir kali mendeteksi telur dan berapa stok telur di gudang saat ini.
+  * Berikan saran ramah jika Node-RED offline (misal: jalankan Jalankan_NodeRED_Background.vbs di laptop) atau jika conveyor standby.
 - Berikan balasan yang ringkas dan jelas tanpa bertele-tele.
 `;
 
@@ -213,13 +214,31 @@ async function executeTool(name, args) {
 
     if (name === 'cek_status_conveyor') {
       try {
-        const [sensorRes, stockRes] = await Promise.all([
+        const [nrRes, sensorRes, stockRes] = await Promise.all([
+          fetch(`${SUPABASE_URL}/riwayat_conveyor?id=eq.1`, { headers }),
           fetch(`${SUPABASE_URL}/log_aktivitas?sumber=eq.sensor&order=id.desc&limit=1`, { headers }),
           fetch(`${SUPABASE_URL}/stok_inventaris?id_produk=eq.telur-ayam-kampung`, { headers })
         ]);
+        const nrData = await nrRes.json();
         const sensorData = await sensorRes.json();
         const stockData = await stockRes.json();
 
+        // 1. Analisis Status Gateway Node-RED di Laptop
+        let isNodeRedOnline = false;
+        let nodeRedLastSeen = 'Belum pernah mengirim heartbeat';
+        if (nrData && nrData[0]?.recorded_at) {
+          const nrTime = new Date(nrData[0].recorded_at).getTime();
+          const diffSec = Math.max(0, Math.round((Date.now() - nrTime) / 1000));
+          if (diffSec < 90) {
+            isNodeRedOnline = true;
+            nodeRedLastSeen = `Aktif terhubung (ping ${diffSec} detik yang lalu)`;
+          } else {
+            const diffMin = Math.round(diffSec / 60);
+            nodeRedLastSeen = `Terakhir aktif ${diffMin} menit yang lalu (Saat ini Offline)`;
+          }
+        }
+
+        // 2. Analisis Status Sensor & Conveyor ESP32
         const lastSensor = sensorData[0];
         let isEspOnline = false;
         let lastSeenText = 'Belum ada deteksi telur tercatat';
@@ -241,13 +260,14 @@ async function executeTool(name, args) {
         }
 
         return {
-          status_mesin_esp32: isEspOnline ? 'AKTIF / SEDANG MENYORTIR' : 'STANDBY / MATI (Tidak ada aktivitas sensor baru)',
-          esp32_terakhir_mendeteksi_telur: lastSeenText,
-          selisih_waktu_menit: diffMinutes,
-          stok_tersedia_gudang: stockData[0]?.stok_tersedia || 0,
-          catatan_teknis: isEspOnline
-            ? 'Conveyor dan sensor IR sedang aktif menghitung telur secara realtime.'
-            : 'Conveyor sedang standby. Jika mesin seharusnya menyala tapi terdeteksi standby, pastikan adaptor 12V L298N tercolok, hotspot 2.4 GHz laptop aktif, dan Node-RED menyala.'
+          gateway_nodered_laptop: isNodeRedOnline ? '🟢 AKTIF & ONLINE' : '🔴 OFFLINE / MATI',
+          nodered_keterangan: nodeRedLastSeen,
+          mesin_conveyor_esp32: isEspOnline ? '🟢 AKTIF / SEDANG MENYORTIR TELUR' : '🟡 STANDBY (Belum ada telur lewat)',
+          conveyor_terakhir_deteksi: lastSeenText,
+          stok_tersedia_gudang: (stockData[0]?.stok_tersedia || 0) + ' butir',
+          panduan_operator: isNodeRedOnline
+            ? (isEspOnline ? 'Semua sistem (Node-RED dan Conveyor) berjalan lancar.' : 'Node-RED di laptop aktif. Jika mesin conveyor sedang dinyalakan, pastikan ESP32 terhubung ke hotspot laptop.')
+            : 'Node-RED di laptop belum aktif. Jalankan script "Jalankan_NodeRED_Background.vbs" di laptop Anda agar data conveyor bisa disinkronkan ke cloud.'
         };
       } catch (err) {
         return { status: 'STANDBY', error: err.message };
