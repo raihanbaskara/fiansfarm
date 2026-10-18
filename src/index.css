@@ -22,7 +22,7 @@
   --photo-bg: #10120f;
   --overlay-bg: rgba(0, 0, 0, .72);
   --hero-wash: linear-gradient(90deg, rgba(4, 7, 5, .78) 0%, rgba(4, 7, 5, .47) 48%, rgba(4, 7, 5, .20) 100%), linear-gradient(0deg, #050706 0%, rgba(5, 7, 6, 0) 30%);
-  --collection-wash: linear-gradient(180deg, rgba(5, 7, 6, .68) 0%, rgba(5, 7, 6, .84) 48%, #050706 100%);
+  --collection-wash: linear-gradient(180deg, rgba(5, 7, 6, .46) 0%, rgba(5, 7, 6, .65) 54%, rgba(5, 7, 6, .91) 100%);
   background: var(--page-bg);
   color: var(--ink);
 }
@@ -97,9 +97,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--focus-ring); ou
 .blur-word:last-child { margin-right: 0; }
 
 .farm-video-background { position: absolute; z-index: 0; inset: -2%; overflow: hidden; pointer-events: none; background: #050706; }
-.farm-video-background video { display: block; width: 100%; height: 100%; object-fit: cover; filter: brightness(.56) saturate(.78) contrast(1.05); transform: scale(1.035); }
-.farm-video-background--hero video { object-position: center 54%; opacity: .66; }
-.farm-video-background--collection video { object-position: right 52%; opacity: .36; filter: brightness(.44) saturate(.70) contrast(1.10); }
+.farm-video-background video { display: block; width: 100%; height: 100%; object-fit: cover; filter: brightness(.74) saturate(.86) contrast(1.06); transform: scale(1.035); }
+.farm-video-background--hero video { object-position: center 54%; opacity: .88; }
+.farm-video-background--collection video { object-position: right 52%; opacity: .72; filter: brightness(.68) saturate(.80) contrast(1.08); }
 .hero-shade, .collection-shade { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .hero-shade { background: var(--hero-wash); }
 .collection-shade { background: var(--collection-wash); }
@@ -119,7 +119,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--focus-ring); ou
 
 @media (max-width: 640px) {
   .farm-video-background--hero video { object-position: 66% center; }
-  .hero-shade { background: linear-gradient(180deg, rgba(4, 7, 5, .48) 0%, rgba(4, 7, 5, .67) 56%, #050706 100%); }
+  .hero-shade { background: linear-gradient(180deg, rgba(4, 7, 5, .38) 0%, rgba(4, 7, 5, .56) 56%, #050706 100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
