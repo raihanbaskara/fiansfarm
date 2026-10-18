@@ -69,7 +69,7 @@ Ekosistem Fian's Farm dibangun dengan arsitektur modular multi-tier yang tangguh
 flowchart TD
     subgraph HARDWARE["🏭 Lapisan Fisik & IoT (Peternakan)"]
         IR["Sensor Inframerah (FC-51)"] -->|"Deteksi Sinyal LOW (GPIO 4)"| ESP32["Mikrokontroler ESP32 NodeMCU"]
-        MOTOR["Driver Motor L298N + DC Gearbox"] <---|PWM Control (GPIO 18, 19, 5)| ESP32
+        ESP32 -->|"PWM Kontrol Motor (GPIO 18, 19, 5)"| MOTOR["Driver Motor L298N + DC Gearbox"]
         ESP32 -->|"I2C Bus (GPIO 21, 22)"| LCD["LCD 16x2 I2C Display"]
     end
 
@@ -89,7 +89,9 @@ flowchart TD
     subgraph APPS["📱 Lapisan Aplikasi & AI Pengguna"]
         DB1 -->|"Vercel Edge API /api/stock"| WEB["Web E-Commerce (fiansfarm.vercel.app)"]
         DB2 -->|"Serverless Realtime CDC"| WEB
-        DB1 & DB2 & DB3 <-->|"Function Tools (Supabase API)"| WA["Fian's Farm AI - WhatsApp Bot (Railway)"]
+        WA["Fian's Farm AI - WhatsApp Bot (Railway)"] -->|"Function Tools Query & Update"| DB1
+        WA -->|"Function Tools Query & Update"| DB2
+        WA -->|"Function Tools Query & Update"| DB3
         USER["Mitra Peternak / Owner"] <-->|"Chat Suara / Voice Note & Teks"| WA
         BUYER["Konsumen Publik"] <-->|"Belanja Telur D2C"| WEB
     end
