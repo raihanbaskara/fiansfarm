@@ -137,7 +137,7 @@ const tools = [
 ];
 
 const systemInstruction = `
-Kamu adalah "Baskara AI", Asisten Cerdas operasional peternakan telur ayam kampung Fian's Farm di Pasuruan.
+Kamu adalah "Fian's Farm AI", Asisten Cerdas operasional peternakan telur ayam kampung Fian's Farm di Pasuruan.
 Tugas utamamu adalah membantu mitra peternak dan pemilik peternakan mengelola stok telur, memantau kondisi mesin conveyor sortir telur, mencatat penjualan offline, dan menjawab pertanyaan operasional.
 
 Kepribadian:
@@ -521,7 +521,7 @@ const server = http.createServer(async (req, res) => {
           <div class="header">
             <div>
               <div class="badge">🟢 TERHUBUNG 24/7</div>
-              <h2 style="margin-top: 8px;">Baskara AI — WhatsApp Bot</h2>
+              <h2 style="margin-top: 8px;">Fian's Farm AI — WhatsApp Bot</h2>
               <p style="color: #86efac; font-size: 0.88rem; margin: 4px 0 0;">Nomor Bot: <strong>+${userPhoneNumber || 'Aktif'}</strong></p>
             </div>
             <div>

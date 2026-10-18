@@ -5,12 +5,12 @@
 
 [![Live Demo](https://img.shields.io/badge/Live_Storefront-fiansfarm.vercel.app-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://fiansfarm.vercel.app)
 [![WhatsApp Bot](https://img.shields.io/badge/AI_Assistant-Railway_Cloud-0ea5e9?style=for-the-badge&logo=railway&logoColor=white)](https://fiansfarm-production.up.railway.app)
-[![Hardware](https://img.shields.io/badge/Hardware-ESP32_|_L298N_|_FC--51-f59e0b?style=for-the-badge&logo=espressif&logoColor=white)](#-spesifikasi-perangkat-keras--skema-perkabelan)
+[![Hardware](https://img.shields.io/badge/Hardware-ESP32_|_L298N_|_FC--51_|_LCD_I2C-f59e0b?style=for-the-badge&logo=espressif&logoColor=white)](#-skema-rangkaian-elektronika--spesifikasi-hardware)
 [![Academic](https://img.shields.io/badge/Academic-Universitas_Negeri_Malang-b91c1c?style=for-the-badge)](#-kontributor--lisensi)
 
 <p align="center">
   <strong>Proyek Inovasi Digitalisasi Rantai Pasok Peternakan Ayam Kampung Tradisional Menuju Industri Peternakan 4.0</strong><br>
-  <em>Kolaborasi Akademik Manajemen Inovasi &ndash; Universitas Negeri Malang bersama Mitra Peternak Ayam Kampung Pasuruan, Jawa Timur.</em>
+  <em>Kolaborasi Akademik Matakuliah Manajemen Inovasi &ndash; Universitas Negeri Malang bersama Mitra Peternak Ayam Kampung Pasuruan, Jawa Timur.</em>
 </p>
 
 ---
@@ -20,7 +20,7 @@
 ## 📌 Daftar Isi
 1. [Ringkasan Eksekutif & Latar Belakang](#-ringkasan-eksekutif--latar-belakang)
 2. [Desain CAD 3D vs Realisasi Perangkat Keras](#-desain-cad-3d-vs-realisasi-perangkat-keras)
-3. [Arsitektur Ekosistem Sistem](#-arsitektur-ekosistem-sistem)
+3. [Arsitektur Ekosistem Sistem & Alur Node-RED](#-arsitektur-ekosistem-sistem--alur-node-red)
 4. [Skema Rangkaian Elektronika & Spesifikasi Hardware](#-skema-rangkaian-elektronika--spesifikasi-hardware)
 5. [Fitur Unggulan Sistem](#-fitur-unggulan-sistem)
 6. [Struktur Repositori Monorepo](#-struktur-repositori-monorepo)
@@ -57,11 +57,11 @@ Perangkat conveyor disimulasikan dan dirancang terlebih dahulu menggunakan pemod
 | 🖥️ Desain Konseptual 3D CAD | 🛠️ Realisasi Perangkat Keras Fisik |
 | :---: | :---: |
 | <img src="docs/images/conveyor_cad_3d.jpeg" alt="Desain 3D CAD Conveyor" width="460"/> | <img src="docs/images/conveyor_physical_hardware.jpeg" alt="Perangkat Keras Fisik Conveyor" width="460"/> |
-| *Rancangan digital 3D dengan sasis kustom MC3D, menara sensor optik, dan panel display.* | *Implementasi fisik prototipe operasional dengan sasis kayu, belt conveyor, LCD 16x2, dan ESP32.* |
+| *Rancangan digital 3D dengan sasis kustom MC3D, menara sensor optik, dan panel display.* | *Implementasi fisik prototipe operasional dengan sasis kayu, belt conveyor, LCD 16x2 I2C, dan ESP32.* |
 
 ---
 
-## 🏗️ Arsitektur Ekosistem Sistem
+## 🏗️ Arsitektur Ekosistem Sistem & Alur Node-RED
 
 Ekosistem Fian's Farm dibangun dengan arsitektur modular multi-tier yang tangguh dan andal:
 
@@ -74,7 +74,7 @@ flowchart TD
     end
 
     subgraph EDGE["💻 Lapisan Edge Gateway (Laptop Peternakan)"]
-        ESP32 -->|"MQTT Pub (1883) 'fiansfarm/conveyor/count'"| BROKER["Eclipse Mosquitto Broker"]
+        ESP32 -->|"MQTT Pub (1883) 'fiansfarm/conveyor/count'"| BROKER["Aedes / Mosquitto Broker"]
         BROKER --> NR["Node-RED IoT Engine"]
         NR -->|"Background Daemon (VBS Service)"| SYNC["Payload Validator & Debounce"]
         NR -->|"Heartbeat Ping (Tiap 30s)"| HB["Status Liveness Gateway"]
@@ -89,7 +89,7 @@ flowchart TD
     subgraph APPS["📱 Lapisan Aplikasi & AI Pengguna"]
         DB1 -->|"Vercel Edge API /api/stock"| WEB["Web E-Commerce (fiansfarm.vercel.app)"]
         DB2 -->|"Serverless Realtime CDC"| WEB
-        DB1 & DB2 & DB3 <-->|"Function Tools (Supabase API)"| WA["Baskara AI - WhatsApp Bot (Railway)"]
+        DB1 & DB2 & DB3 <-->|"Function Tools (Supabase API)"| WA["Fian's Farm AI - WhatsApp Bot (Railway)"]
         USER["Mitra Peternak / Owner"] <-->|"Chat Suara / Voice Note & Teks"| WA
         BUYER["Konsumen Publik"] <-->|"Belanja Telur D2C"| WEB
     end
@@ -100,28 +100,47 @@ flowchart TD
     style APPS fill:#0f172a,stroke:#8b5cf6,stroke-width:2px,color:#f8fafc
 ```
 
+### Visualisasi Flow Editor Node-RED (Edge Gateway)
+Alur pemrosesan data, sinkronisasi otomatis ke cloud, kontrol motor dua arah, dan heartbeat liveness dikonfigurasi secara visual melalui Node-RED:
+
+<div align="center">
+  <img src="docs/images/nodered_flow.png" alt="Node-RED Flow Diagram Sistem IoT Conveyor Telur Fian's Farm" width="950"/>
+  <p><em>Alur Pemrosesan Node-RED: Kontrol Motor MQTT &rarr; Broker Aedes (Port 1883) &rarr; Parsing &amp; Akumulasi Hitungan &rarr; Pipeline Sinkronisasi Supabase Cloud &rarr; Heartbeat Liveness Tiap 30 Detik.</em></p>
+</div>
+
+**Fungsi Setiap Jalur Node-RED:**
+1. **Kontrol Operasional Motor (`fiansfarm/conveyor/motor`):** Menerima trigger tombol dashboard atau perintah API untuk menjalankan conveyor (`START`), menghentikan conveyor (`STOP/PAUSE`), dan mereset hitungan (`RESET`).
+2. **Broker MQTT Aedes (Port 1883):** Berfungsi sebagai server MQTT lokal independen di laptop peternakan, bekerja 100% offline tanpa perlu koneksi internet luar.
+3. **Pipeline Ingesti & Sinkronisasi Telur:**
+   * Node `MQTT <- fiansfarm/conveyor/count` menerima JSON `{ count: X, delta: 1 }`.
+   * Node `Parse JSON` & `Akumulasi Hitungan Telur` memvalidasi integritas data dan mengisolasi noise sensor.
+   * Rantai HTTP Request otomatis: **GET Stok Terkini** &rarr; **Hitung Nilai Baru** &rarr; **PATCH Tabel Stok** &rarr; **POST Log Aktivitas Realtime**.
+4. **Heartbeat Liveness Monitor:**
+   * Menerima deteksi denyut nadi ESP32 (`fiansfarm/conveyor/heartbeat`).
+   * Mengirimkan update status liveness berkala setiap 30 detik ke tabel `riwayat_conveyor` sehingga sistem Cloud dan WhatsApp Bot mengetahui dengan presisi apakah Node-RED di laptop sedang aktif atau offline.
+
 ---
 
 ## ⚡ Skema Rangkaian Elektronika & Spesifikasi Hardware
 
-### Skema Perkabelan Rangkaian (Wiring Diagram)
+### Skema Perkabelan Rangkaian (Wiring Diagram Lengkap)
 Seluruh jalur kelistrikan, pembagian daya (*power distribution*), dan isolasi tegangan dirancang agar stabil serta bebas dari gangguan *back-EMF* motor DC:
 
 <div align="center">
   <img src="docs/images/circuit_schematic.png" alt="Skema Rangkaian Elektronika IoT Conveyor Fian's Farm" width="850"/>
-  <p><em>Skema Pengkabelan Lengkap: DC Jack 12V &rarr; Step-Down LM2596 (5V) &rarr; ESP32 &amp; Sensor IR &rarr; Driver L298N &rarr; DC Gearbox Motor.</em></p>
+  <p><em>Skema Pengkabelan Lengkap: DC Jack 12V &rarr; Step-Down LM2596 (5V) &rarr; ESP32, Sensor IR FC-51 &amp; LCD 16x2 I2C &rarr; Driver L298N &rarr; DC Gearbox Motor.</em></p>
 </div>
 
 ### Arsitektur Kelistrikan & Distribusi Daya
 1. **Jalur Utama 12V DC (Adaptor Eksternal):**
    * Masuk melalui **Jack DC Input**.
-   * Menyuplai pin **12V Driver L298N** untuk memberi torsi penuh pada DC Gearbox Motor penggerak sabuk berjalan.
+   * Menyuplai terminal **12V Driver Motor L298N** untuk memberi torsi penuh pada DC Gearbox Motor penggerak sabuk berjalan.
    * Menyuplai terminal **IN+ Step-Down LM2596**.
 2. **Jalur Regulasi 5V DC (LM2596 Step-Down):**
    * Menurunkan tegangan dari 12V ke **5V DC yang stabil** untuk mencegah panas berlebih pada regulator internal mikrokontroler.
-   * Menyuplai pin **VIN ESP32** dan pin **VCC Sensor IR (FC-51)**.
+   * Menyuplai pin **VIN ESP32**, pin **VCC Sensor IR (FC-51)**, dan pin **VCC Modul LCD 16x2 I2C**.
 3. **Common Ground Topology:**
-   * Seluruh terminal **GND (Ground)** dari Adaptor 12V, Driver L298N, Modul LM2596, ESP32, dan Sensor IR dihubungkan menjadi satu (*common ground reference*) guna menjamin keandalan sinyal logika digital.
+   * Seluruh terminal **GND (Ground)** dari Adaptor 12V, Driver L298N, Modul LM2596, ESP32, Sensor IR, dan LCD I2C dihubungkan menjadi satu (*common ground reference*) guna menjamin keandalan sinyal logika digital.
 
 ### Matriks Pinout ESP32 (30-Pin)
 | Pin ESP32 | Terhubung Ke | Fungsi / Keterangan |
@@ -130,16 +149,16 @@ Seluruh jalur kelistrikan, pembagian daya (*power distribution*), dan isolasi te
 | **GPIO 18 (D18)** | Pin `IN1` Driver L298N | Kontrol arah putar motor forward. |
 | **GPIO 19 (D19)** | Pin `IN2` Driver L298N | Kontrol arah putar motor reverse / brake. |
 | **GPIO 5 (D5)** | Pin `ENA` Driver L298N | Sinyal PWM (1 kHz, 8-bit) untuk mengatur kecepatan konstan conveyor. |
-| **GPIO 21 (D21)** | Pin `SDA` LCD 16x2 I2C | Jalur Serial Data bus I2C display lokal. |
-| **GPIO 22 (D22)** | Pin `SCL` LCD 16x2 I2C | Jalur Serial Clock bus I2C display lokal. |
+| **GPIO 21 (D21)** | Pin `SDA` Modul LCD 16x2 I2C | Jalur Serial Data bus I2C display lokal. |
+| **GPIO 22 (D22)** | Pin `SCL` Modul LCD 16x2 I2C | Jalur Serial Clock bus I2C display lokal. |
 | **VIN** | Terminal `OUT+` Step-Down | Suplai daya 5V DC mikrokontroler. |
-| **GND** | Common Ground | Ground bersama sistem. |
+| **GND** | Common Ground Busbar | Ground bersama sistem. |
 
 ---
 
 ## 🌟 Fitur Unggulan Sistem
 
-### 1. 🤖 "Baskara AI" — Asisten Suara WhatsApp Berbasis Google Gemini
+### 1. 🤖 "Fian's Farm AI" — Asisten Suara WhatsApp Berbasis Google Gemini
 * **Multimodal Voice Assistant:** Peternak di kandang cukup mengirimkan **Pesan Suara (Voice Note WhatsApp)**, dan AI akan langsung memahami intonasi bahasa lokal Jawa Timur / Indonesia santai.
 * **Autonomous Function Calling:**
   * `cek_stok_telur`: Mengecek stok terkini di gudang.
@@ -166,9 +185,10 @@ fiansfarm/
 │   └── stock.js                   # Endpoint proxy aman untuk stok Supabase
 ├── docs/                          # Dokumentasi, Gambar, dan Aset CAD
 │   └── images/
-│       ├── circuit_schematic.png  # Diagram skema pengkabelan lengkap
+│       ├── circuit_schematic.png  # Diagram skema pengkabelan lengkap (dengan LCD I2C)
 │       ├── conveyor_cad_3d.jpeg   # Foto render 3D CAD SolidWorks
-│       └── conveyor_physical_hardware.jpeg # Foto implementasi fisik prototipe
+│       ├── conveyor_physical_hardware.jpeg # Foto implementasi fisik prototipe
+│       └── nodered_flow.png       # Screenshot alur flow editor Node-RED
 ├── firmware/                      # Kode Program Mikrokontroler
 │   └── esp32_conveyor/
 │       └── esp32_conveyor.ino     # Firmware C++ ESP32 (IR, MQTT, LCD, Motor)
@@ -242,9 +262,20 @@ Untuk mencegah bot AI disalahgunakan atau menjawab pesan pribadi secara sembaran
 
 ## 👥 Kontributor & Lisensi
 
-* **Pengembang & Peneliti:** [Raihan Baskara](https://github.com/raihanbaskara)
-* **Institusi:** Program Studi Manajemen Inovasi &ndash; **Universitas Negeri Malang (UM)**
-* **Tim Mekanikal & Robotika:** Tim Robotik Wisanggeni (MC3D)
-* **Mitra Lapangan:** Fian's Farm, Pasuruan, Jawa Timur
+### Tim Pengembang & Peneliti
+* **Raihan Nauval Aziz**
+* **Muhammad Khoirul Nafi’an**
+* **Muhammad Taufiqul Nazik**
+* **Rafael Wahyu Christian**
 
+### Institusi & Pembina Akademik
+* **Matakuliah Manajemen Inovasi** &ndash; **Universitas Negeri Malang (UM)**
+
+### Tim Robotika & Perancangan Mekanikal
+* **Tim Robotik Dewantara Research Team Universitas Negeri Malang**
+
+### Mitra Lapangan
+* **Fian's Farm**, Dusun Tugusari, Desa Kepulungan, Kecamatan Gempol, Kabupaten Pasuruan, Jawa Timur
+
+---
 Dilisensikan di bawah lisensi [MIT License](LICENSE). Seluruh hak cipta inovasi dan desain dilindungi untuk kemajuan peternakan rakyat Indonesia. 🇲🇨
