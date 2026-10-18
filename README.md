@@ -5,8 +5,8 @@
 
 [![Live Demo](https://img.shields.io/badge/Live_Storefront-fiansfarm.vercel.app-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://fiansfarm.vercel.app)
 [![WhatsApp Bot](https://img.shields.io/badge/AI_Assistant-Railway_Cloud-0ea5e9?style=for-the-badge&logo=railway&logoColor=white)](https://fiansfarm-production.up.railway.app)
-[![Hardware](https://img.shields.io/badge/Hardware-ESP32_|_L298N_|_FC--51-f59e0b?style=for-the-badge&logo=espressif&logoColor=white)](#-hardware-architecture--wiring)
-[![Academic](https://img.shields.io/badge/Academic-Universitas_Negeri_Malang-b91c1c?style=for-the-badge)](#-project-background--credits)
+[![Hardware](https://img.shields.io/badge/Hardware-ESP32_|_L298N_|_FC--51-f59e0b?style=for-the-badge&logo=espressif&logoColor=white)](#-spesifikasi-perangkat-keras--skema-perkabelan)
+[![Academic](https://img.shields.io/badge/Academic-Universitas_Negeri_Malang-b91c1c?style=for-the-badge)](#-kontributor--lisensi)
 
 <p align="center">
   <strong>Proyek Inovasi Digitalisasi Rantai Pasok Peternakan Ayam Kampung Tradisional Menuju Industri Peternakan 4.0</strong><br>
@@ -21,7 +21,7 @@
 1. [Ringkasan Eksekutif & Latar Belakang](#-ringkasan-eksekutif--latar-belakang)
 2. [Desain CAD 3D vs Realisasi Perangkat Keras](#-desain-cad-3d-vs-realisasi-perangkat-keras)
 3. [Arsitektur Ekosistem Sistem](#-arsitektur-ekosistem-sistem)
-4. [Spesifikasi Perangkat Keras & Skema Perkabelan](#-spesifikasi-perangkat-keras--skema-perkabelan)
+4. [Skema Rangkaian Elektronika & Spesifikasi Hardware](#-skema-rangkaian-elektronika--spesifikasi-hardware)
 5. [Fitur Unggulan Sistem](#-fitur-unggulan-sistem)
 6. [Struktur Repositori Monorepo](#-struktur-repositori-monorepo)
 7. [Panduan Instalasi & Menjalankan Sistem](#-panduan-instalasi--menjalankan-sistem)
@@ -52,15 +52,12 @@ Proyek ini mengintegrasikan **teknologi mekatronika (IoT Conveyor)**, **Edge Com
 
 ## 🎨 Desain CAD 3D vs Realisasi Perangkat Keras
 
-Perangkat conveyor disimulasikan dan dirancang terlebih dahulu menggunakan pemodelan 3D CAD (*SolidWorks / Computer-Aided Design*) dengan mempertimbangkan ergonomi peternakan, jalur jatuh telur yang aman, pelindung samping (*guardrails*), dudukan menara optik sensor IR vertikal, serta kotak kontrol tertutup untuk modul elektronik.
+Perangkat conveyor disimulasikan dan dirancang terlebih dahulu menggunakan pemodelan 3D CAD (*SolidWorks / Computer-Aided Design*) dengan memperhitungkan ergonomi peternakan, jalur jatuh telur yang aman, pelindung samping (*guardrails*), dudukan menara optik sensor IR vertikal, serta kotak kontrol tertutup untuk modul elektronik.
 
 | 🖥️ Desain Konseptual 3D CAD | 🛠️ Realisasi Perangkat Keras Fisik |
 | :---: | :---: |
-| <img src="docs/images/conveyor_cad_3d.jpeg" alt="Desain 3D CAD Conveyor" width="450"/> | <img src="docs/images/conveyor_physical_hardware.jpeg" alt="Perangkat Keras Fisik Conveyor" width="450"/> |
+| <img src="docs/images/conveyor_cad_3d.jpeg" alt="Desain 3D CAD Conveyor" width="460"/> | <img src="docs/images/conveyor_physical_hardware.jpeg" alt="Perangkat Keras Fisik Conveyor" width="460"/> |
 | *Rancangan digital 3D dengan sasis kustom MC3D, menara sensor optik, dan panel display.* | *Implementasi fisik prototipe operasional dengan sasis kayu, belt conveyor, LCD 16x2, dan ESP32.* |
-
-> [!TIP]
-> **File 3D & Desain Mekanikal:** File desain 3D STL/STEP untuk cetak 3D (*3D Printing*) braket conveyor dan menara sensor dapat diletakkan pada direktori [`docs/cad/`](docs/cad/).
 
 ---
 
@@ -105,34 +102,38 @@ flowchart TD
 
 ---
 
-## ⚡ Spesifikasi Perangkat Keras & Skema Perkabelan
+## ⚡ Skema Rangkaian Elektronika & Spesifikasi Hardware
 
-### Bill of Materials (BOM)
-| Komponen | Spesifikasi / Model | Fungsi Utama |
+### Skema Perkabelan Rangkaian (Wiring Diagram)
+Seluruh jalur kelistrikan, pembagian daya (*power distribution*), dan isolasi tegangan dirancang agar stabil serta bebas dari gangguan *back-EMF* motor DC:
+
+<div align="center">
+  <img src="docs/images/circuit_schematic.png" alt="Skema Rangkaian Elektronika IoT Conveyor Fian's Farm" width="850"/>
+  <p><em>Skema Pengkabelan Lengkap: DC Jack 12V &rarr; Step-Down LM2596 (5V) &rarr; ESP32 &amp; Sensor IR &rarr; Driver L298N &rarr; DC Gearbox Motor.</em></p>
+</div>
+
+### Arsitektur Kelistrikan & Distribusi Daya
+1. **Jalur Utama 12V DC (Adaptor Eksternal):**
+   * Masuk melalui **Jack DC Input**.
+   * Menyuplai pin **12V Driver L298N** untuk memberi torsi penuh pada DC Gearbox Motor penggerak sabuk berjalan.
+   * Menyuplai terminal **IN+ Step-Down LM2596**.
+2. **Jalur Regulasi 5V DC (LM2596 Step-Down):**
+   * Menurunkan tegangan dari 12V ke **5V DC yang stabil** untuk mencegah panas berlebih pada regulator internal mikrokontroler.
+   * Menyuplai pin **VIN ESP32** dan pin **VCC Sensor IR (FC-51)**.
+3. **Common Ground Topology:**
+   * Seluruh terminal **GND (Ground)** dari Adaptor 12V, Driver L298N, Modul LM2596, ESP32, dan Sensor IR dihubungkan menjadi satu (*common ground reference*) guna menjamin keandalan sinyal logika digital.
+
+### Matriks Pinout ESP32 (30-Pin)
+| Pin ESP32 | Terhubung Ke | Fungsi / Keterangan |
 | :--- | :--- | :--- |
-| **Mikrokontroler** | ESP-WROOM-32 (30/38 Pin) | Otak pemrosesan, WiFi 2.4 GHz, MQTT Publisher, dan kontrol PWM. |
-| **Sensor Optik** | FC-51 Infrared Obstacle Sensor | Mendeteksi telur yang melintas dengan respons cepat (<40ms debounce). |
-| **Driver Motor** | L298N Dual H-Bridge | Mengendalikan arah dan kecepatan motor DC conveyor. |
-| **Motor Penggerak** | DC Gearbox Motor 12V High-Torque | Memutar sabuk conveyor secara konstan dan halus. |
-| **Layar Informasi** | LCD 16x2 + Modul I2C Backpack (PCF8574) | Menampilkan status lokal: `MOTOR:ON`, `[MQTT]`, dan total hitungan telur. |
-| **Sasis & Mekanikal** | Rangka Akrilik/PLA 3D Print (MC3D) + Wood Base | Struktur mekanis penopang sabuk berjalan dan dudukan sensor. |
-| **Catu Daya** | Adaptor 12V 2A DC + 5V USB | Daya motor conveyor dan mikroelektronika. |
-
-### Matriks Pinout ESP32
-```
-                +----------------------------+
-                |        ESP32 NodeMCU       |
-                |                            |
-  [FC-51 OUT]  --> GPIO 4                    |
-  [LCD SDA]   <--> GPIO 21                   |
-  [LCD SCL]    --> GPIO 22                   |
-  [L298N IN1]  --> GPIO 18                   |
-  [L298N IN2]  --> GPIO 19                   |
-  [L298N ENA]  --> GPIO 5 (PWM Speed)        |
-  [Power 5V]   <-- VIN (5V DC Input)         |
-  [Common GND] <-- GND                       |
-                +----------------------------+
-```
+| **GPIO 4 (D4)** | Pin `OUT` Sensor IR (FC-51) | Input Digital Active-LOW saat ada telur memantulkan inframerah. |
+| **GPIO 18 (D18)** | Pin `IN1` Driver L298N | Kontrol arah putar motor forward. |
+| **GPIO 19 (D19)** | Pin `IN2` Driver L298N | Kontrol arah putar motor reverse / brake. |
+| **GPIO 5 (D5)** | Pin `ENA` Driver L298N | Sinyal PWM (1 kHz, 8-bit) untuk mengatur kecepatan konstan conveyor. |
+| **GPIO 21 (D21)** | Pin `SDA` LCD 16x2 I2C | Jalur Serial Data bus I2C display lokal. |
+| **GPIO 22 (D22)** | Pin `SCL` LCD 16x2 I2C | Jalur Serial Clock bus I2C display lokal. |
+| **VIN** | Terminal `OUT+` Step-Down | Suplai daya 5V DC mikrokontroler. |
+| **GND** | Common Ground | Ground bersama sistem. |
 
 ---
 
@@ -165,8 +166,9 @@ fiansfarm/
 │   └── stock.js                   # Endpoint proxy aman untuk stok Supabase
 ├── docs/                          # Dokumentasi, Gambar, dan Aset CAD
 │   └── images/
-│       ├── conveyor_cad_3d.jpeg   # Foto render 3D CAD
-│       └── conveyor_physical_hardware.jpeg # Foto implementasi fisik
+│       ├── circuit_schematic.png  # Diagram skema pengkabelan lengkap
+│       ├── conveyor_cad_3d.jpeg   # Foto render 3D CAD SolidWorks
+│       └── conveyor_physical_hardware.jpeg # Foto implementasi fisik prototipe
 ├── firmware/                      # Kode Program Mikrokontroler
 │   └── esp32_conveyor/
 │       └── esp32_conveyor.ino     # Firmware C++ ESP32 (IR, MQTT, LCD, Motor)
