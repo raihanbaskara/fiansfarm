@@ -177,10 +177,10 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
               }
             }}
             className="flex items-center gap-3 px-2 text-white"
-            aria-label="Kembali ke Butir Pagi"
+            aria-label="Kembali ke EggSync"
           >
             <span className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full"><Icon name="egg" size={21} /></span>
-            <span><span className="block font-heading text-2xl italic leading-none">Butir Pagi</span><span className="mt-1 block text-[9px] tracking-[.18em] text-white/45">PANEL TOKO</span></span>
+            <span><span className="block font-heading text-2xl italic leading-none">EggSync</span><span className="mt-1 block text-[9px] tracking-[.18em] text-white/45">PANEL TOKO</span></span>
           </a>
 
           <p className="mb-3 mt-12 px-3 text-[9px] font-medium tracking-[.18em] text-white/35">MENU UTAMA</p>
@@ -197,9 +197,9 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
             <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3 lg:hidden">
                 <span className="liquid-glass flex h-10 w-10 shrink-0 items-center justify-center rounded-full"><Icon name="egg" size={19} /></span>
-                <span className="font-heading text-xl italic">Butir Pagi <span className="font-body text-[10px] not-italic tracking-[.12em] text-white/45">ADMIN</span></span>
+                <span className="font-heading text-xl italic">EggSync <span className="font-body text-[10px] not-italic tracking-[.12em] text-white/45">ADMIN</span></span>
               </div>
-              <div className="hidden text-xs text-white/45 lg:block">Butir Pagi <span className="px-1.5 text-white/25">/</span> Admin <span className="px-1.5 text-white/25">/</span> <span className="text-white/80">{sections.find((item) => item.id === section)?.label}</span></div>
+              <div className="hidden text-xs text-white/45 lg:block">EggSync <span className="px-1.5 text-white/25">/</span> Admin <span className="px-1.5 text-white/25">/</span> <span className="text-white/80">{sections.find((item) => item.id === section)?.label}</span></div>
               <div className="ml-auto flex items-center gap-2">
                 <span className="hidden rounded-full border border-white/10 bg-white/[.04] px-3 py-2 text-[10px] tracking-[.08em] text-white/65 sm:inline-flex">DATA LOKAL</span>
                 <a
@@ -222,7 +222,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
           <main className="mx-auto max-w-[1480px] px-4 pb-12 pt-7 sm:px-6 sm:pt-9 lg:px-10">
             <div className="mb-7 flex flex-col gap-3 sm:mb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
               <div>
-                <p className="mb-2 flex items-center gap-2 text-[10px] tracking-[.16em] text-white/55"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> BUTIR PAGI <span className="text-white/25">/</span> OPERASIONAL</p>
+                <p className="mb-2 flex items-center gap-2 text-[10px] tracking-[.16em] text-white/55"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> EGGSYNC <span className="text-white/25">/</span> OPERASIONAL</p>
                 <h1 className="font-heading text-4xl italic leading-none sm:text-5xl">{sections.find((item) => item.id === section)?.label}</h1>
                 <p className="mt-2 max-w-xl text-sm font-light text-white/55">Pantau persediaan telur per butir dan catat perubahan stok tokomu.</p>
               </div>

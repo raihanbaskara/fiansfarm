@@ -53,7 +53,7 @@ function createWhatsAppUrl(lines: CartLine[], totalEggs: number, subtotal: numbe
   }
 
   const message = [
-    'Halo Butir Pagi / Fian\'s Farm, saya ingin memesan Telur Ayam Kampung:',
+    'Halo EggSync / Fian\'s Farm, saya ingin memesan Telur Ayam Kampung:',
     '',
     'Daftar Pesanan:',
     itemsList,
@@ -71,7 +71,7 @@ function createWhatsAppUrl(lines: CartLine[], totalEggs: number, subtotal: numbe
 function singleWhatsAppUrl(count: number, pricePerEgg: number) {
   const estimate = formatPrice(count * pricePerEgg);
   const message = [
-    'Halo Butir Pagi / Fian\'s Farm, saya ingin memesan Telur Ayam Kampung:',
+    'Halo EggSync / Fian\'s Farm, saya ingin memesan Telur Ayam Kampung:',
     `Jumlah: ${count} butir`,
     `Estimasi harga: ${estimate} (belum termasuk ongkir)`,
     'Mohon konfirmasi ketersediaan stok, pengemasan, dan ongkir ke alamat saya. Terima kasih!',
@@ -264,11 +264,11 @@ function Storefront() {
         {/* HEADER */}
         <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-8 lg:px-16">
           <div className="mx-auto flex max-w-[1520px] items-center justify-between gap-3">
-            <a href="#hero" aria-label="Beranda Butir Pagi" className="liquid-glass inline-flex h-12 shrink-0 items-center gap-2.5 rounded-full px-4 text-white transition-transform hover:scale-[1.02]">
+            <a href="#hero" aria-label="Beranda EggSync" className="liquid-glass inline-flex h-12 shrink-0 items-center gap-2.5 rounded-full px-4 text-white transition-transform hover:scale-[1.02]">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[#cbd2b3]">
                 <Icon name="egg" size={18} />
               </span>
-              <span className="font-heading text-2xl italic tracking-tight">Butir Pagi</span>
+              <span className="font-heading text-2xl italic tracking-tight">EggSync</span>
             </a>
 
             <nav aria-label="Navigasi utama" className="liquid-glass hidden items-center gap-1 rounded-full p-1.5 md:flex">
@@ -888,7 +888,7 @@ function Storefront() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#cbd2b3]">
                   <Icon name="egg" size={19} />
                 </span>
-                <span className="font-heading text-3xl italic tracking-tight text-white">Butir Pagi</span>
+                <span className="font-heading text-3xl italic tracking-tight text-white">EggSync</span>
               </div>
               <p className="mt-3 max-w-sm text-xs font-light leading-relaxed text-white/55">
                 Telur Ayam Kampung Asli mitra Fian's Farm · {formatPrice(heroProduct.price)} / butir. Pesan langsung via WhatsApp atau Shopee.
@@ -910,7 +910,7 @@ function Storefront() {
           </div>
           <div className="mx-auto mt-10 flex max-w-[1480px] flex-col gap-2 border-t border-white/[.06] pt-5 text-[10px] text-white/40 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <span>© {new Date().getFullYear()} Butir Pagi · Fian's Farm</span>
+              <span>© {new Date().getFullYear()} EggSync · Fian's Farm</span>
             </div>
             <p>Pemesanan, konfirmasi stok, dan ongkir diselesaikan via WhatsApp atau Shopee.</p>
           </div>
