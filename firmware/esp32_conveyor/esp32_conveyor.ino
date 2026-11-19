@@ -20,8 +20,8 @@ const int MOTOR_IN2     = 19;  // Arah putar 2
 const int MOTOR_ENA     = 5;   // PWM Kecepatan (Enable A)
 
 // ======================== KONFIGURASI WIFI & MQTT =============================
-const char* WIFI_SSID     = "NAMA_HOTSPOT_LAPTOP";    // Ganti dengan Nama Hotspot Laptop Anda
-const char* WIFI_PASSWORD = "PASSWORD_HOTSPOT";       // Ganti dengan Password Hotspot Laptop
+const char* WIFI_SSID     = "BASKARA";    // Ganti dengan Nama Hotspot Laptop Anda
+const char* WIFI_PASSWORD = "12345678";       // Ganti dengan Password Hotspot Laptop
 const char* MQTT_BROKER   = "192.168.137.1";          // IP Default Hotspot Laptop (100% Offline Tanpa Kuota Internet)
 const int   MQTT_PORT     = 1883;
 const char* MQTT_CLIENT_ID= "ESP32_Conveyor_FiansFarm";

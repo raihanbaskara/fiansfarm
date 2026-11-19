@@ -3,6 +3,7 @@ import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-
 import { BlurText } from './components/BlurText';
 import { FarmVideoBackground } from './components/FarmVideoBackground';
 import { Icon } from './components/Icon';
+import MethodStickyStack from './components/MethodStickyStack';
 import { products } from './data/products';
 import { eggPackages } from './data/packages';
 import type { EggPackage } from './data/packages';
@@ -274,6 +275,7 @@ function Storefront() {
             <nav aria-label="Navigasi utama" className="liquid-glass hidden items-center gap-1 rounded-full p-1.5 md:flex">
               <a className="nav-link" href="#hero">Beranda</a>
               <a className="nav-link" href="#paket">Pilihan Telur</a>
+              <a className="nav-link" href="#metode">Metode</a>
               <a className="nav-link" href="#cara-pesan">Cara Pesan</a>
               <a className="nav-link" href="#kualitas">Standar Kualitas</a>
               <a className="nav-link" href="#faq">FAQ</a>
@@ -325,6 +327,7 @@ function Storefront() {
               >
                 <a className="mobile-nav-link" href="#hero" onClick={() => setMobileMenuOpen(false)}>Beranda</a>
                 <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Telur</a>
+                <a className="mobile-nav-link" href="#metode" onClick={() => setMobileMenuOpen(false)}>Metode</a>
                 <a className="mobile-nav-link" href="#cara-pesan" onClick={() => setMobileMenuOpen(false)}>Cara Pesan</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
@@ -333,7 +336,7 @@ function Storefront() {
           </AnimatePresence>
         </header>
 
-        <main className="overflow-x-hidden">
+        <main className="overflow-x-clip">
           {/* 1. CINEMATIC HERO */}
           <section id="hero" className="hero-screen relative isolate flex min-h-[100dvh] flex-col overflow-hidden bg-black">
             <FarmVideoBackground src={heroVideo} className="farm-video-background--hero" reduceMotion={Boolean(reduceMotion)} priority />
@@ -559,7 +562,10 @@ function Storefront() {
             </div>
           </section>
 
-          {/* 3. GSAP OVERLAPPING SECTION — CARA PEMESANAN */}
+          {/* 3. FRAMER-STYLE STICKY STACKING SECTION — THE METHOD (4 STEPS) */}
+          <MethodStickyStack />
+
+          {/* 4. GSAP OVERLAPPING SECTION — CARA PEMESANAN */}
           <section id="cara-pesan" data-overlap-section className="relative isolate overflow-hidden border-t border-white/[.08] py-24 sm:py-32 lg:py-36">
             <div className="mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
               <div className="mb-10 flex flex-col gap-5 md:mb-14 md:flex-row md:items-end md:justify-between">
