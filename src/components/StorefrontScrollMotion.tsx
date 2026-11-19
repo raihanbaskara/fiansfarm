@@ -70,31 +70,6 @@ export default function StorefrontScrollMotion({ rootRef, reduceMotion }: Storef
             onUpdate: updateFromVelocity,
           });
         }
-
-        if (conditions?.desktop) {
-          const stack = root.querySelector<HTMLElement>('[data-overlap-section]');
-          const cards = stack
-            ? gsap.utils.toArray<HTMLElement>('[data-overlap-card]', stack)
-            : [];
-          if (stack && cards.length > 1) {
-            const overlapTimeline = gsap.timeline({
-              scrollTrigger: {
-                trigger: stack,
-                start: 'top 78%',
-                end: 'bottom 48%',
-                scrub: 0.8,
-              },
-            });
-            cards.slice(1).forEach((card, index) => {
-              overlapTimeline.fromTo(
-                card,
-                { y: 28 + index * 18 },
-                { y: -10 - index * 10, ease: 'none', duration: 1 },
-                0,
-              );
-            });
-          }
-        }
       },
       root,
     );

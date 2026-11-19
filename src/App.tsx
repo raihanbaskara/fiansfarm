@@ -3,7 +3,6 @@ import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-
 import { BlurText } from './components/BlurText';
 import { FarmVideoBackground } from './components/FarmVideoBackground';
 import { Icon } from './components/Icon';
-import MethodStickyStack from './components/MethodStickyStack';
 import { products } from './data/products';
 import { eggPackages } from './data/packages';
 import type { EggPackage } from './data/packages';
@@ -275,7 +274,6 @@ function Storefront() {
             <nav aria-label="Navigasi utama" className="liquid-glass hidden items-center gap-1 rounded-full p-1.5 md:flex">
               <a className="nav-link" href="#hero">Beranda</a>
               <a className="nav-link" href="#paket">Pilihan Telur</a>
-              <a className="nav-link" href="#metode">Metode</a>
               <a className="nav-link" href="#cara-pesan">Cara Pesan</a>
               <a className="nav-link" href="#kualitas">Standar Kualitas</a>
               <a className="nav-link" href="#faq">FAQ</a>
@@ -327,7 +325,6 @@ function Storefront() {
               >
                 <a className="mobile-nav-link" href="#hero" onClick={() => setMobileMenuOpen(false)}>Beranda</a>
                 <a className="mobile-nav-link" href="#paket" onClick={() => setMobileMenuOpen(false)}>Pilihan Telur</a>
-                <a className="mobile-nav-link" href="#metode" onClick={() => setMobileMenuOpen(false)}>Metode</a>
                 <a className="mobile-nav-link" href="#cara-pesan" onClick={() => setMobileMenuOpen(false)}>Cara Pesan</a>
                 <a className="mobile-nav-link" href="#kualitas" onClick={() => setMobileMenuOpen(false)}>Standar Kualitas</a>
                 <a className="mobile-nav-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
@@ -562,13 +559,10 @@ function Storefront() {
             </div>
           </section>
 
-          {/* 3. FRAMER-STYLE STICKY STACKING SECTION — THE METHOD (4 STEPS) */}
-          <MethodStickyStack />
-
-          {/* 4. GSAP OVERLAPPING SECTION — CARA PEMESANAN */}
-          <section id="cara-pesan" data-overlap-section className="relative isolate overflow-hidden border-t border-white/[.08] py-24 sm:py-32 lg:py-36">
+          {/* 3. SCROLL-DOWN STICKY OVERLAPPING SECTION — CARA PEMESANAN */}
+          <section id="cara-pesan" data-overlap-section className="relative isolate border-t border-white/[.08] py-24 sm:py-32 lg:py-36">
             <div className="mx-auto max-w-[1480px] px-4 sm:px-8 lg:px-12">
-              <div className="mb-10 flex flex-col gap-5 md:mb-14 md:flex-row md:items-end md:justify-between">
+              <div className="mb-12 flex flex-col gap-5 md:mb-16 md:flex-row md:items-end md:justify-between">
                 <div data-scroll-reveal className="max-w-3xl">
                   <p className="text-[10px] font-medium tracking-[.18em] text-[#cbd2b3]">PESAN DENGAN CARA ANDA</p>
                   <h2 className="mt-2 font-heading text-4xl italic leading-[.95] sm:text-5xl md:text-6xl">
@@ -580,60 +574,168 @@ function Storefront() {
                 </p>
               </div>
 
-              {/* OVERLAPPING CARDS (GSAP ScrollTrigger Stacking) */}
-              <div className="grid items-stretch gap-3 md:grid-cols-3 md:gap-0">
-                <article data-overlap-card data-scroll-reveal className="order-step-card liquid-glass-strong relative z-10 flex flex-col justify-between rounded-[1.8rem] p-6 sm:p-8">
-                  <div>
-                    <p className="font-heading text-5xl italic text-[#cbd2b3]">01</p>
-                    <h3 className="mt-8 font-heading text-3xl italic text-white">Tentukan Kebutuhan</h3>
-                    <p className="mt-3 text-xs font-light leading-relaxed text-white/60">
-                      Gunakan stepper satuan kustom atau pilih kotak 10 butir dan tray 30 butir untuk melihat estimasi biaya sebelum memesan.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection('paket')}
-                    className="mt-8 inline-flex items-center gap-2 self-start text-xs font-medium text-white/80 transition-colors hover:text-[#cbd2b3]"
-                  >
-                    Pilih Paket Sekarang <Icon name="arrow-up-right" size={14} />
-                  </button>
-                </article>
+              {/* FRAMER-STYLE SCROLL-DOWN STICKY STACKING CARDS */}
+              <div className="relative flex flex-col gap-6 pb-20">
+                {/* STEP 01 */}
+                <div className="sticky top-[84px] md:top-[96px] z-10 transition-all duration-200">
+                  <article className="liquid-glass-strong relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-10 md:p-12 shadow-2xl border border-white/10 bg-[#070c08]/95 min-h-[360px] md:min-h-[400px]">
+                    {/* Top Bar / Tab Label */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs sm:text-sm uppercase tracking-[0.18em] text-[#cbd2b3] font-semibold">
+                          01 / 03 — PERSIAPAN KEBUTUHAN
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] text-white/70">
+                        Kalkulator & Satuan
+                      </span>
+                    </div>
 
-                <article data-overlap-card data-scroll-reveal className="order-step-card liquid-glass-strong relative z-20 flex flex-col justify-between rounded-[1.8rem] p-6 sm:p-8 md:-ml-7 md:mt-8">
-                  <div>
-                    <p className="font-heading text-5xl italic text-[#cbd2b3]">02</p>
-                    <h3 className="mt-8 font-heading text-3xl italic text-white">Pesan via WhatsApp</h3>
-                    <p className="mt-3 text-xs font-light leading-relaxed text-white/60">
-                      Langsung terhubung dengan admin via WhatsApp resmi. Konfirmasi ketersediaan stok, pengemasan, ongkir, dan alamat pengiriman.
-                    </p>
-                  </div>
-                  <a
-                    href={singleWhatsAppUrl(10, heroProduct.price)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="liquid-glass-strong mt-8 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-white transition-transform hover:-translate-y-0.5"
-                  >
-                    Chat WhatsApp <Icon name="arrow-up-right" size={14} />
-                  </a>
-                </article>
+                    {/* Content Body */}
+                    <div className="my-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                      <div className="max-w-2xl">
+                        <p className="font-heading text-5xl sm:text-6xl italic text-[#cbd2b3] leading-none">01</p>
+                        <h3 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl italic text-white leading-tight">
+                          Tentukan Kebutuhan
+                        </h3>
+                        <p className="mt-4 text-sm sm:text-base font-light leading-relaxed text-white/70">
+                          Gunakan stepper satuan kustom atau pilih kotak 10 butir dan tray 30 butir untuk melihat estimasi biaya sebelum memesan.
+                        </p>
+                      </div>
 
-                <article data-overlap-card data-scroll-reveal className="order-step-card liquid-glass-strong relative z-30 flex flex-col justify-between rounded-[1.8rem] p-6 sm:p-8 md:-ml-7 md:-mt-1">
-                  <div>
-                    <p className="font-heading text-5xl italic text-[#cbd2b3]">03</p>
-                    <h3 className="mt-8 font-heading text-3xl italic text-white">Beli di Shopee</h3>
-                    <p className="mt-3 text-xs font-light leading-relaxed text-white/60">
-                      Ingin menggunakan metode pembayaran ShopeePay, SPayLater, atau gratis ongkir? Buka etalase resmi mitra di Shopee.
-                    </p>
-                  </div>
-                  <a
-                    href={heroProduct.shopeeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="liquid-glass mt-8 inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-white/85 transition-colors hover:bg-white/10"
-                  >
-                    Buka Etalase Shopee <Icon name="arrow-up-right" size={14} />
-                  </a>
-                </article>
+                      <div className="flex flex-col gap-2 shrink-0 self-start md:self-center">
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#cbd2b3]/20 text-[#cbd2b3]">✓</span>
+                          <span>Pilihan satuan fleksibel</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#cbd2b3]/20 text-[#cbd2b3]">✓</span>
+                          <span>Hitung estimasi seketika</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action */}
+                    <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                      <span className="text-xs text-white/50">Langkah 1 dari 3</span>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection('paket')}
+                        className="liquid-glass-strong inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-medium text-white transition-all hover:bg-white/15 hover:text-[#cbd2b3]"
+                      >
+                        Pilih Paket Sekarang <Icon name="arrow-up-right" size={14} />
+                      </button>
+                    </div>
+                  </article>
+                </div>
+
+                {/* STEP 02 */}
+                <div className="sticky top-[132px] md:top-[148px] z-20 transition-all duration-200">
+                  <article className="liquid-glass-strong relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-10 md:p-12 shadow-2xl border border-[#2d4d35]/60 bg-[#0e1710]/95 min-h-[360px] md:min-h-[400px]">
+                    {/* Top Bar / Tab Label */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs sm:text-sm uppercase tracking-[0.18em] text-[#cbd2b3] font-semibold">
+                          02 / 03 — JALUR CEPAT WHATSAPP
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-emerald-500/20 px-3 py-1 font-mono text-[11px] text-emerald-300">
+                        WhatsApp Resmi
+                      </span>
+                    </div>
+
+                    {/* Content Body */}
+                    <div className="my-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                      <div className="max-w-2xl">
+                        <p className="font-heading text-5xl sm:text-6xl italic text-[#cbd2b3] leading-none">02</p>
+                        <h3 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl italic text-white leading-tight">
+                          Pesan via WhatsApp
+                        </h3>
+                        <p className="mt-4 text-sm sm:text-base font-light leading-relaxed text-white/70">
+                          Langsung terhubung dengan admin via WhatsApp resmi. Konfirmasi ketersediaan stok, pengemasan, ongkir, dan alamat pengiriman.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-2 shrink-0 self-start md:self-center">
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">✓</span>
+                          <span>Admin responsif & ramah</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">✓</span>
+                          <span>Bisa transfer & COD area tertentu</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action */}
+                    <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                      <span className="text-xs text-white/50">Langkah 2 dari 3</span>
+                      <a
+                        href={singleWhatsAppUrl(10, heroProduct.price)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="liquid-glass-strong inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs font-medium text-white transition-transform hover:-translate-y-0.5 hover:bg-emerald-600/30"
+                      >
+                        Chat WhatsApp <Icon name="arrow-up-right" size={14} />
+                      </a>
+                    </div>
+                  </article>
+                </div>
+
+                {/* STEP 03 */}
+                <div className="sticky top-[180px] md:top-[200px] z-30 transition-all duration-200">
+                  <article className="liquid-glass-strong relative flex flex-col justify-between rounded-[2rem] p-6 sm:p-10 md:p-12 shadow-2xl border border-emerald-500/30 bg-[#152319]/95 min-h-[360px] md:min-h-[400px]">
+                    {/* Top Bar / Tab Label */}
+                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs sm:text-sm uppercase tracking-[0.18em] text-[#cbd2b3] font-semibold">
+                          03 / 03 — MARKETPLACE SHOPEE
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-orange-500/20 px-3 py-1 font-mono text-[11px] text-orange-300">
+                        Toko Shopee
+                      </span>
+                    </div>
+
+                    {/* Content Body */}
+                    <div className="my-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                      <div className="max-w-2xl">
+                        <p className="font-heading text-5xl sm:text-6xl italic text-[#cbd2b3] leading-none">03</p>
+                        <h3 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl italic text-white leading-tight">
+                          Beli di Shopee
+                        </h3>
+                        <p className="mt-4 text-sm sm:text-base font-light leading-relaxed text-white/70">
+                          Ingin menggunakan metode pembayaran ShopeePay, SPayLater, atau gratis ongkir? Buka etalase resmi mitra di Shopee.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-2 shrink-0 self-start md:self-center">
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">✓</span>
+                          <span>Voucher Gratis Ongkir XTRA</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-white/60">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">✓</span>
+                          <span>Garansi keamanan pengiriman</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action */}
+                    <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                      <span className="text-xs text-white/50">Langkah 3 dari 3</span>
+                      <a
+                        href={heroProduct.shopeeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="liquid-glass inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs font-medium text-white/85 transition-colors hover:bg-white/10"
+                      >
+                        Buka Etalase Shopee <Icon name="arrow-up-right" size={14} />
+                      </a>
+                    </div>
+                  </article>
+                </div>
               </div>
             </div>
           </section>
