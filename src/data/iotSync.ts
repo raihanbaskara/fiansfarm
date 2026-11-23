@@ -6,8 +6,10 @@ export const iotUpdateEvent = 'fiansfarm:iot-status-updated';
 export type IotStatus = {
   isNodeRedConnected: boolean;
   isEspOnline: boolean;
+  motorRunning: boolean;
   count: number;
   lastUpdated: string | null;
+  lastCommand: { command: string; at: string } | null;
   peternakan: string;
   error: string | null;
 };
@@ -15,8 +17,10 @@ export type IotStatus = {
 let cachedStatus: IotStatus = {
   isNodeRedConnected: false,
   isEspOnline: false,
+  motorRunning: false,
   count: 0,
   lastUpdated: null,
+  lastCommand: null,
   peternakan: "Fian's Farm (Kabupaten Pasuruan)",
   error: null,
 };
@@ -67,12 +71,18 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
     const timeStr = responseData.waktu_update || new Date().toISOString();
 
     const isEspAlive = Boolean(responseData.esp32_online);
+    const isMotorRunning =
+      typeof responseData.motor_running === 'boolean'
+        ? responseData.motor_running
+        : isEspAlive;
 
     cachedStatus = {
       isNodeRedConnected: true,
       isEspOnline: isEspAlive,
+      motorRunning: isMotorRunning,
       count: newCount,
       lastUpdated: timeStr,
+      lastCommand: responseData.motor_last_command || cachedStatus.lastCommand,
       peternakan: responseData.peternakan || "Fian's Farm (Kabupaten Pasuruan)",
       error: null,
     };
@@ -106,13 +116,16 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
       if (res.ok) {
         const json = await res.json();
         if (json && json.success) {
+          const cloudEspOnline = Boolean(json.espOnline);
           cachedStatus = {
-            isNodeRedConnected: true,
-            isEspOnline: Boolean(json.espOnline),
-            count: Number(json.available) || 99,
+            ...cachedStatus,
+            isNodeRedConnected: false,
+            isEspOnline: cloudEspOnline,
+            motorRunning: cloudEspOnline,
+            count: Number(json.available) || cachedStatus.count,
             lastUpdated: json.lastUpdated || new Date().toISOString(),
             peternakan: "Fian's Farm (Kabupaten Pasuruan)",
-            error: null,
+            error: 'Node-RED lokal belum terhubung; menampilkan sinkronisasi Cloud.',
           };
           window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
           return cachedStatus;
@@ -126,12 +139,97 @@ export async function fetchConveyorStock(): Promise<IotStatus> {
       ...cachedStatus,
       isNodeRedConnected: false,
       isEspOnline: false,
+      motorRunning: false,
       error: lastError || 'Node-RED tidak merespons',
     };
   }
 
   window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
   return cachedStatus;
+}
+
+export type ConveyorCommand = 'START' | 'STOP' | 'RESET';
+
+export type ConveyorCommandResult = {
+  ok: boolean;
+  command: ConveyorCommand;
+  motorRunning: boolean;
+  message: string;
+};
+
+export async function sendConveyorCommand(command: ConveyorCommand): Promise<ConveyorCommandResult> {
+  const urls = [
+    'http://127.0.0.1:1880/api/conveyor/motor',
+    'http://localhost:1880/api/conveyor/motor',
+  ];
+
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(url, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ command }),
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const json = await res.json();
+        const nextRunning =
+          typeof json?.motor_running === 'boolean'
+            ? json.motor_running
+            : command === 'START'
+              ? true
+              : command === 'STOP'
+                ? false
+                : cachedStatus.motorRunning;
+
+        cachedStatus = {
+          ...cachedStatus,
+          isNodeRedConnected: true,
+          motorRunning: nextRunning,
+          count: command === 'RESET' ? 0 : cachedStatus.count,
+          lastCommand: {
+            command,
+            at: json?.waktu || new Date().toISOString(),
+          },
+          error: null,
+        };
+        window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
+        window.setTimeout(() => {
+          fetchConveyorStock();
+        }, 450);
+
+        const label =
+          command === 'START'
+            ? 'Perintah START dikirim: conveyor dijalankan.'
+            : command === 'STOP'
+              ? 'Perintah STOP dikirim: conveyor dihentikan sementara.'
+              : 'Hitungan conveyor direset ke 0 butir.';
+
+        return {
+          ok: true,
+          command,
+          motorRunning: nextRunning,
+          message: label,
+        };
+      }
+    } catch {
+      // Coba URL berikutnya
+    }
+  }
+
+  return {
+    ok: false,
+    command,
+    motorRunning: cachedStatus.motorRunning,
+    message: 'Node-RED lokal (port 1880) tidak terjangkau dari browser ini. Pastikan Node-RED aktif di laptop.',
+  };
 }
 
 export function startIotPolling(intervalMs = 3000) {
@@ -171,5 +269,6 @@ export function useIotStatus() {
   return {
     ...status,
     refresh: fetchConveyorStock,
+    sendCommand: sendConveyorCommand,
   };
 }

@@ -165,6 +165,10 @@ void hubungkanMQTT() {
     if (mqttClient.connect(MQTT_CLIENT_ID, "fiansfarm/conveyor/heartbeat", 0, true, "{\"alive\":false}")) {
       Serial.println("BERHASIL!");
       mqttClient.subscribe(TOPIC_CONTROL);
+      char hbPayload[80];
+      snprintf(hbPayload, sizeof(hbPayload), "{\"alive\":true,\"count\":%lu,\"motor\":%s}",
+               eggCount, motorRunning ? "true" : "false");
+      mqttClient.publish("fiansfarm/conveyor/heartbeat", hbPayload);
       tampilkanLCD();
     } else {
       Serial.printf("GAGAL (rc=%d)\n", mqttClient.state());
@@ -180,12 +184,10 @@ void setup() {
   // Inisialisasi Pin IR Sensor
   pinMode(IR_PIN, INPUT_PULLUP);
 
-  // Inisialisasi Pin Motor (IN1 & IN2)
+  // Inisialisasi Pin Motor (IN1 & IN2) - langsung nyala saat ESP32 mendapat daya
   pinMode(MOTOR_IN1, OUTPUT);
   pinMode(MOTOR_IN2, OUTPUT);
-
-  // Matikan motor dulu saat awal menyala
-  stopMotor();
+  startMotor();
 
   // Inisialisasi I2C & LCD
   Wire.begin(SDA_PIN, SCL_PIN);

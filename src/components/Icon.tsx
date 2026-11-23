@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react';
 
-export type IconName = 'arrow-up-right' | 'arrow-right' | 'arrow-left' | 'bag' | 'close' | 'plus' | 'minus' | 'trash' | 'play' | 'menu' | 'check' | 'sparkle' | 'egg' | 'grid' | 'boxes' | 'history' | 'wifi' | 'activity' | 'chevron-down' | 'shield';
+export type IconName = 'arrow-up-right' | 'arrow-right' | 'arrow-left' | 'bag' | 'close' | 'plus' | 'minus' | 'trash' | 'play' | 'stop' | 'power' | 'refresh' | 'menu' | 'check' | 'sparkle' | 'egg' | 'grid' | 'boxes' | 'history' | 'wifi' | 'activity' | 'chevron-down' | 'shield';
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName; size?: number };
 
@@ -14,6 +14,9 @@ const paths: Record<IconName, ReactNode> = {
   minus: <path d="M5 12h14" />,
   trash: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M5 7l1 14h12l1-14" /><path d="M9 7V4h6v3" /></>,
   play: <path d="m8 5 11 7-11 7V5Z" fill="currentColor" stroke="none" />,
+  stop: <rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none" />,
+  power: <><path d="M12 3v8" /><path d="M18.4 6.6a9 9 0 1 1-12.77 0" /></>,
+  refresh: <><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></>,
   menu: <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>,
   check: <path d="m5 12 4 4L19 6" />,
   sparkle: <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" /></>,

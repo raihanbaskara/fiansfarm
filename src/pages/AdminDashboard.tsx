@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { products } from '../data/products';
 import { inventoryUpdateEvent, readInventory } from '../data/inventory';
 import { useIotStatus } from '../data/iotSync';
+import type { ConveyorCommand, IotStatus } from '../data/iotSync';
 import { getLiveStock, getLiveActivities, recordStockChange, subscribeToSupabaseRealtime } from '../data/supabaseDb';
 
 type Section = 'ringkasan' | 'stok' | 'aktivitas' | 'perangkat';
@@ -67,6 +68,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   const [saleQuantity, setSaleQuantity] = useState('1');
   const [notice, setNotice] = useState('');
   const [activityFilter, setActivityFilter] = useState<'semua' | Source>('semua');
+  const [pendingCommand, setPendingCommand] = useState<ConveyorCommand | null>(null);
 
   useEffect(() => {
     getLiveStock().then(setStocks);
@@ -145,6 +147,17 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
     if (recordChange(saleProduct, -quantity, 'shopee', `Pesanan Shopee · ${quantity} butir`)) setSaleQuantity('1');
   };
 
+  const handleConveyorCommand = async (command: ConveyorCommand) => {
+    if (pendingCommand) return;
+    setPendingCommand(command);
+    try {
+      const result = await iot.sendCommand(command);
+      setNotice(result.message);
+    } finally {
+      setPendingCommand(null);
+    }
+  };
+
   const navButtons = (mobile = false) => sections.map((item) => (
     <button
       key={item.id}
@@ -187,8 +200,31 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
           <nav aria-label="Navigasi admin" className="flex flex-col gap-1.5">{navButtons()}</nav>
 
           <div className="liquid-glass mt-auto rounded-2xl p-4">
-            <div className="flex items-center gap-2 text-xs"><span className="h-2 w-2 rounded-full bg-amber-300" /><span className="text-white/85">Sensor belum tersambung</span></div>
-            <p className="mt-2 text-[10px] leading-relaxed text-white/55">Perubahan tersimpan di browser ini. Login admin dan sinkronisasi server belum aktif.</p>
+            <div className="flex items-center gap-2 text-xs">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  iot.isEspOnline
+                    ? 'bg-emerald-400 animate-pulse'
+                    : iot.isNodeRedConnected
+                      ? 'bg-amber-300'
+                      : 'bg-sky-300/80'
+                }`}
+              />
+              <span className="text-white/85">
+                {iot.isEspOnline
+                  ? iot.motorRunning
+                    ? 'ESP32 & Motor Aktif'
+                    : 'ESP32 Aktif · Motor Dijeda'
+                  : iot.isNodeRedConnected
+                    ? 'Node-RED Siaga · ESP32 Offline'
+                    : 'Sinkronisasi Cloud Aktif'}
+              </span>
+            </div>
+            <p className="mt-2 text-[10px] leading-relaxed text-white/55">
+              {iot.isNodeRedConnected
+                ? 'Terhubung ke Node-RED port 1880 & Supabase Cloud secara real-time.'
+                : 'Membaca data inventaris terbaru melalui endpoint cloud /api/stock.'}
+            </p>
           </div>
         </aside>
 
@@ -201,7 +237,18 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
               </div>
               <div className="hidden text-xs text-white/45 lg:block">EggSync <span className="px-1.5 text-white/25">/</span> Admin <span className="px-1.5 text-white/25">/</span> <span className="text-white/80">{sections.find((item) => item.id === section)?.label}</span></div>
               <div className="ml-auto flex items-center gap-2">
-                <span className="hidden rounded-full border border-white/10 bg-white/[.04] px-3 py-2 text-[10px] tracking-[.08em] text-white/65 sm:inline-flex">DATA LOKAL</span>
+                <span className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[.04] px-3 py-2 text-[10px] tracking-[.08em] text-white/75 sm:inline-flex">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      iot.isEspOnline
+                        ? 'bg-emerald-400 animate-pulse'
+                        : iot.isNodeRedConnected
+                          ? 'bg-amber-300'
+                          : 'bg-[#cbd2b3]'
+                    }`}
+                  />
+                  {iot.isEspOnline ? 'IOT + CLOUD LIVE' : iot.isNodeRedConnected ? 'NODE-RED + CLOUD' : 'CLOUD SUPABASE'}
+                </span>
                 <a
                   href="/"
                   onClick={(e) => {
@@ -222,18 +269,38 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
           <main className="mx-auto max-w-[1480px] px-4 pb-12 pt-7 sm:px-6 sm:pt-9 lg:px-10">
             <div className="mb-7 flex flex-col gap-3 sm:mb-8 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
               <div>
-                <p className="mb-2 flex items-center gap-2 text-[10px] tracking-[.16em] text-white/55"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" /> EGGSYNC <span className="text-white/25">/</span> OPERASIONAL</p>
+                <p className="mb-2 flex items-center gap-2 text-[10px] tracking-[.16em] text-white/55">
+                  <span className={`h-1.5 w-1.5 rounded-full ${iot.isEspOnline ? 'bg-emerald-400 animate-pulse' : 'bg-[#cbd2b3]'}`} /> EGGSYNC <span className="text-white/25">/</span> OPERASIONAL
+                </p>
                 <h1 className="font-heading text-4xl italic leading-none sm:text-5xl">{sections.find((item) => item.id === section)?.label}</h1>
-                <p className="mt-2 max-w-xl text-sm font-light text-white/55">Pantau persediaan telur per butir dan catat perubahan stok tokomu.</p>
+                <p className="mt-2 max-w-xl text-sm font-light text-white/55">Pantau persediaan telur per butir, kendalikan motor conveyor, dan catat perubahan stok.</p>
               </div>
-              <p className="text-xs text-white/45">Stok dan aktivitas tersimpan di perangkat ini</p>
+              <p className="text-xs text-white/45">
+                {iot.isNodeRedConnected
+                  ? 'Sinkron real-time dengan Node-RED lokal & Supabase Cloud'
+                  : 'Tersinkronisasi dengan database Supabase Cloud'}
+              </p>
             </div>
 
             {section === 'ringkasan' && (
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
                   <MetricCard label="Stok tersedia" value={formatCount(totalStock)} unit="butir" icon="boxes" detail="Jumlah semua jenis telur" />
-                  <MetricCard label="Masuk dari sensor hari ini" value={formatCount(countedToday)} unit="butir" icon="activity" detail="Menunggu koneksi perangkat" />
+                  <MetricCard
+                    label="Masuk dari sensor hari ini"
+                    value={formatCount(countedToday)}
+                    unit="butir"
+                    icon="activity"
+                    detail={
+                      iot.isEspOnline
+                        ? iot.motorRunning
+                          ? 'ESP32 aktif · motor berjalan'
+                          : 'ESP32 aktif · motor dijeda'
+                        : iot.isNodeRedConnected
+                          ? 'Node-RED siaga · menunggu ESP32'
+                          : 'Tersinkronisasi via Cloud'
+                    }
+                  />
                   <MetricCard label="Penjualan Shopee hari ini" value={formatCount(soldToday)} unit="butir" icon="bag" detail="Dicatat manual oleh admin" />
                   <MetricCard label="Stok perlu dicek" value={formatCount(lowStockCount)} unit="produk" icon="sparkle" detail="Batas rendah: 25 butir" />
                 </div>
@@ -242,23 +309,22 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
                   <section className="liquid-glass-strong rounded-[1.35rem] p-4 sm:p-6" aria-labelledby="inventory-summary-heading">
                     <div className="mb-5 flex items-start justify-between gap-3">
                       <div><h2 id="inventory-summary-heading" className="font-heading text-2xl italic">Persediaan telur</h2><p className="mt-1 text-xs text-white/45">Stok yang dapat dijual, dihitung per butir.</p></div>
-                      <button type="button" onClick={() => setSection('stok')} className="rounded-full border border-white/10 px-3 py-2 text-[11px] text-white/70 transition-colors hover:bg-white/[.06]">Kelola stok</button>
+                      <button type="button" onClick={() => setSection('stok')} className="cursor-pointer rounded-full border border-white/10 px-3 py-2 text-[11px] text-white/70 transition-colors hover:bg-white/[.06]">Kelola stok</button>
                     </div>
                     <InventoryTable stocks={stocks} onChange={recordChange} compact />
                   </section>
 
                   <div className="space-y-5">
-                    <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-6" aria-labelledby="device-summary-heading">
-                      <div className="flex items-start justify-between gap-3">
-                        <div><p className="text-[9px] tracking-[.16em] text-white/40">CONVEYOR · SENSOR IR</p><h2 id="device-summary-heading" className="mt-1 font-heading text-2xl italic">Perangkat IoT</h2></div>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-amber-200/[.07] px-2.5 py-1.5 text-[10px] text-amber-100/80"><span className="h-1.5 w-1.5 rounded-full bg-amber-300" />Belum terhubung</span>
-                      </div>
-                      <p className="mt-3 text-xs leading-relaxed text-white/55">Saat perangkat terhubung, satu telur yang terdeteksi akan menambah stok satu butir.</p>
-                      <button type="button" onClick={() => setSection('perangkat')} className="mt-4 inline-flex items-center gap-2 text-xs text-white/75 transition-colors hover:text-white">Lihat status perangkat <Icon name="arrow-right" size={14} /></button>
-                    </section>
+                    <ConveyorMotorConsole
+                      iot={iot}
+                      pendingCommand={pendingCommand}
+                      onCommand={handleConveyorCommand}
+                      onOpenDetails={() => setSection('perangkat')}
+                      compact
+                    />
 
                     <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-6" aria-labelledby="recent-activity-heading">
-                      <div className="mb-4 flex items-center justify-between gap-3"><div><h2 id="recent-activity-heading" className="font-heading text-2xl italic">Aktivitas terbaru</h2><p className="mt-1 text-xs text-white/45">Perubahan stok terakhir.</p></div><button type="button" onClick={() => setSection('aktivitas')} className="text-[11px] text-white/60 hover:text-white">Semua</button></div>
+                      <div className="mb-4 flex items-center justify-between gap-3"><div><h2 id="recent-activity-heading" className="font-heading text-2xl italic">Aktivitas terbaru</h2><p className="mt-1 text-xs text-white/45">Perubahan stok terakhir.</p></div><button type="button" onClick={() => setSection('aktivitas')} className="cursor-pointer text-[11px] text-white/60 hover:text-white">Semua</button></div>
                       <ActivityList movements={recentMovements} emptyMessage="Belum ada perubahan stok. Penyesuaian dan penjualan yang dicatat akan muncul di sini." />
                     </section>
                   </div>
@@ -292,7 +358,7 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
 
             {section === 'aktivitas' && (
               <section className="liquid-glass-strong rounded-[1.35rem] p-4 sm:p-6" aria-labelledby="activity-heading">
-                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="activity-heading" className="font-heading text-2xl italic">Riwayat perubahan stok</h2><p className="mt-1 text-xs text-white/45">Catatan tersimpan di browser ini dan belum dikirim ke server.</p></div><label className="text-xs text-white/55">Sumber
+                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="activity-heading" className="font-heading text-2xl italic">Riwayat perubahan stok</h2><p className="mt-1 text-xs text-white/45">Catatan tersinkronisasi real-time dengan database Supabase Cloud &amp; perangkat ini.</p></div><label className="text-xs text-white/55">Sumber
                   <select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value as 'semua' | Source)} className="ml-2 rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 text-xs text-white outline-none focus:border-white/35"><option value="semua">Semua aktivitas</option><option value="sensor">Sensor IR</option><option value="shopee">Penjualan Shopee</option><option value="manual">Penyesuaian manual</option></select>
                 </label></div>
                 <ActivityList movements={filteredMovements} emptyMessage="Belum ada aktivitas untuk filter ini. Perubahan stok akan muncul di sini." detailed />
@@ -300,70 +366,78 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
             )}
 
             {section === 'perangkat' && (
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,.9fr)]">
-                <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7" aria-labelledby="sensor-heading">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[9px] tracking-[.16em] text-white/40">PERANGKAT #CONVEYOR-01</p>
-                      <h2 id="sensor-heading" className="mt-2 font-heading text-3xl italic">Conveyor telur</h2>
-                    </div>
-                    {iot.isEspOnline ? (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Online · ESP32 Conveyor Terhubung
-                      </span>
-                    ) : iot.isNodeRedConnected ? (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-[10px] text-amber-200">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                        Siaga · ESP32 Mati / Terputus
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-[10px] text-red-200">
-                        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                        Offline · Node-RED Belum Aktif
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                    <DeviceInfo label="Status ESP32" value={iot.isEspOnline ? "Aktif · Mengirim Data" : "Mati / Belum Terhubung"} />
-                    <DeviceInfo label="Hitungan conveyor" value={`${formatCount(iot.count)} butir`} />
-                    <DeviceInfo label="Sensor" value="IR FC-51 (GPIO 4)" />
-                    <DeviceInfo label="Koneksi MQTT" value="Aedes Port 1883 (Hotspot)" />
-                  </div>
-                  <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.025] p-4">
-                    <p className="text-xs font-medium text-white/80">Pemantauan Perangkat Nyata (Live Hardware)</p>
-                    <p className="mt-1.5 text-xs leading-relaxed text-white/50">
-                      Sistem memverifikasi heartbeat dari fisik ESP32 setiap beberapa detik. Ketika ESP32 dicabut atau dimatikan, status akan otomatis beralih ke "Mati / Terputus".
-                    </p>
-                  </div>
-                  {iot.isNodeRedConnected ? (
-                    <div className={`mt-5 rounded-xl border p-4 ${iot.isEspOnline ? 'border-emerald-400/15 bg-emerald-500/[.04]' : 'border-amber-300/15 bg-amber-400/[.04]'}`}>
-                      <div className="flex items-center justify-between">
-                        <p className={`text-xs font-medium ${iot.isEspOnline ? 'text-emerald-300' : 'text-amber-200'}`}>
-                          {iot.isEspOnline ? 'ESP32 Beroperasi Normal' : 'Menunggu ESP32 Dicolokkan / Dinyalakan'}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => iot.refresh()}
-                          className="rounded-lg bg-white/10 px-2.5 py-1 text-[10px] text-white/80 hover:bg-white/20 transition-colors"
-                        >
-                          Refresh data
-                        </button>
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]">
+                <div className="space-y-5">
+                  <ConveyorMotorConsole
+                    iot={iot}
+                    pendingCommand={pendingCommand}
+                    onCommand={handleConveyorCommand}
+                  />
+
+                  <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7" aria-labelledby="sensor-heading">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] tracking-[.16em] text-white/40">PERANGKAT #CONVEYOR-01</p>
+                        <h2 id="sensor-heading" className="mt-2 font-heading text-3xl italic">Conveyor telur</h2>
                       </div>
-                      <p className="mt-1 text-xs leading-relaxed text-white/60">
-                        {iot.peternakan} · Update: {iot.lastUpdated ? formatTime(iot.lastUpdated) : 'Baru saja'}
+                      {iot.isEspOnline ? (
+                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Online · ESP32 Conveyor Terhubung
+                        </span>
+                      ) : iot.isNodeRedConnected ? (
+                        <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-[10px] text-amber-200">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          Siaga · ESP32 Mati / Terputus
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-2 text-[10px] text-red-200">
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                          Offline · Node-RED Belum Aktif
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                      <DeviceInfo label="Status ESP32" value={iot.isEspOnline ? 'Aktif · Mengirim Data' : 'Mati / Belum Terhubung'} />
+                      <DeviceInfo label="Hitungan conveyor" value={`${formatCount(iot.count)} butir`} />
+                      <DeviceInfo label="Status motor" value={iot.isEspOnline ? (iot.motorRunning ? 'Berjalan (ON)' : 'Dijeda (STOP)') : 'Siaga (Auto-Start saat nyala)'} />
+                      <DeviceInfo label="Koneksi MQTT" value="Aedes Port 1883 (Hotspot)" />
+                    </div>
+                    <div className="mt-6 rounded-xl border border-white/[.08] bg-white/[.025] p-4">
+                      <p className="text-xs font-medium text-white/80">Pemantauan Perangkat Nyata (Live Hardware)</p>
+                      <p className="mt-1.5 text-xs leading-relaxed text-white/50">
+                        Sistem memverifikasi heartbeat dari fisik ESP32 setiap beberapa detik. Ketika ESP32 dicabut atau dimatikan, status otomatis beralih ke "Mati / Terputus" — dan saat dinyalakan lagi, motor tetap langsung berjalan otomatis.
                       </p>
                     </div>
-                  ) : (
-                    <div className="mt-5 rounded-xl border border-amber-200/10 bg-amber-100/[.035] p-4">
-                      <p className="text-xs font-medium text-amber-100/80">Menunggu Node-RED</p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/55">
-                        Pastikan Node-RED sedang berjalan di laptop pada port 1880.
-                      </p>
-                    </div>
-                  )}
-                </section>
-                <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7" aria-labelledby="iot-activity-heading">
+                    {iot.isNodeRedConnected ? (
+                      <div className={`mt-5 rounded-xl border p-4 ${iot.isEspOnline ? 'border-emerald-400/15 bg-emerald-500/[.04]' : 'border-amber-300/15 bg-amber-400/[.04]'}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <p className={`text-xs font-medium ${iot.isEspOnline ? 'text-emerald-300' : 'text-amber-200'}`}>
+                            {iot.isEspOnline ? 'ESP32 Beroperasi Normal' : 'Menunggu ESP32 Dicolokkan / Dinyalakan'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => iot.refresh()}
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-[10px] text-white/85 transition-colors hover:bg-white/20"
+                          >
+                            <Icon name="refresh" size={12} /> Refresh data
+                          </button>
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-white/60">
+                          {iot.peternakan} · Update: {iot.lastUpdated ? formatTime(iot.lastUpdated) : 'Baru saja'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-5 rounded-xl border border-amber-200/10 bg-amber-100/[.035] p-4">
+                        <p className="text-xs font-medium text-amber-100/80">Menunggu Node-RED</p>
+                        <p className="mt-1 text-xs leading-relaxed text-white/55">
+                          Pastikan Node-RED sedang berjalan di laptop pada port 1880 untuk mengontrol motor dan melihat heartbeat langsung.
+                        </p>
+                      </div>
+                    )}
+                  </section>
+                </div>
+                <section className="liquid-glass-strong rounded-[1.35rem] p-5 sm:p-7 self-start" aria-labelledby="iot-activity-heading">
                   <h2 id="iot-activity-heading" className="font-heading text-2xl italic">Event sensor terakhir</h2>
                   <p className="mt-1 text-xs text-white/45">Data hitungan telur yang diterima dari sensor conveyor.</p>
                   <div className="mt-5">
@@ -383,11 +457,163 @@ function AdminDashboard({ onBack }: AdminDashboardProps = {}) {
   );
 }
 
+function ConveyorMotorConsole({
+  iot,
+  pendingCommand,
+  onCommand,
+  onOpenDetails,
+  compact = false,
+}: {
+  iot: IotStatus;
+  pendingCommand: ConveyorCommand | null;
+  onCommand: (command: ConveyorCommand) => void;
+  onOpenDetails?: () => void;
+  compact?: boolean;
+}) {
+  const isRunning = iot.isEspOnline ? iot.motorRunning : iot.isNodeRedConnected ? iot.motorRunning : false;
+  const isPaused = (iot.isEspOnline || iot.isNodeRedConnected) && !isRunning;
+
+  const badgeTone = isRunning
+    ? 'border-emerald-400/25 bg-emerald-400/[0.1] text-emerald-200'
+    : iot.isNodeRedConnected
+      ? 'border-amber-300/25 bg-amber-300/[0.08] text-amber-100/90'
+      : 'border-white/15 bg-white/[0.04] text-white/65';
+
+  const dotTone = isRunning
+    ? 'bg-emerald-400 animate-pulse'
+    : iot.isNodeRedConnected
+      ? 'bg-amber-300'
+      : 'bg-white/40';
+
+  const statusText = iot.isEspOnline
+    ? isRunning
+      ? 'Motor berjalan'
+      : 'Motor dijeda'
+    : iot.isNodeRedConnected
+      ? isRunning
+        ? 'Siaga · Perintah START'
+        : 'Siaga · Menunggu ESP32'
+      : 'Node-RED offline';
+
+  return (
+    <section
+      aria-labelledby={compact ? 'motor-console-compact-heading' : 'motor-console-heading'}
+      className="rounded-[1.5rem] border border-white/[0.09] bg-white/[0.02] p-1.5 shadow-[0_18px_46px_rgba(0,0,0,0.3)]"
+    >
+      <div className="rounded-[calc(1.5rem-0.375rem)] border border-white/[0.08] bg-[#090d0a]/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[9px] tracking-[.16em] text-white/45">MOTOR CONVEYOR · L298N</p>
+            <h2
+              id={compact ? 'motor-console-compact-heading' : 'motor-console-heading'}
+              className={`mt-1 font-heading italic leading-tight text-white ${compact ? 'text-2xl' : 'text-3xl'}`}
+            >
+              {compact ? 'Perangkat IoT' : 'Kendali sabuk penghitung'}
+            </h2>
+          </div>
+          <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] tracking-[.03em] ${badgeTone}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${dotTone}`} />
+            {statusText}
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={pendingCommand !== null}
+            onClick={() => onCommand('START')}
+            aria-pressed={isRunning}
+            className={`group flex cursor-pointer items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${
+              isRunning
+                ? 'border-emerald-400/35 bg-emerald-500/[0.14] text-emerald-100 shadow-[inset_0_1px_0_rgba(167,243,208,0.18)]'
+                : 'border-white/[0.12] bg-white/[0.035] text-white hover:border-emerald-300/35 hover:bg-emerald-500/[0.08]'
+            }`}
+          >
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105 ${
+                isRunning ? 'bg-emerald-400/20 text-emerald-200' : 'bg-white/[0.07] text-white/85'
+              }`}
+            >
+              <Icon name="play" size={14} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-medium leading-tight">
+                {pendingCommand === 'START' ? 'Mengirim...' : 'Start conveyor'}
+              </span>
+              <span className="mt-0.5 block text-[10px] text-white/50">Jalankan sabuk motor</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={pendingCommand !== null}
+            onClick={() => onCommand('STOP')}
+            aria-pressed={isPaused}
+            className={`group flex cursor-pointer items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${
+              isPaused
+                ? 'border-amber-300/35 bg-amber-400/[0.13] text-amber-100 shadow-[inset_0_1px_0_rgba(253,230,138,0.16)]'
+                : 'border-white/[0.12] bg-white/[0.035] text-white/90 hover:border-red-300/35 hover:bg-red-500/[0.08]'
+            }`}
+          >
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105 ${
+                isPaused ? 'bg-amber-300/20 text-amber-200' : 'bg-white/[0.07] text-white/80'
+              }`}
+            >
+              <Icon name="stop" size={13} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-medium leading-tight">
+                {pendingCommand === 'STOP' ? 'Mengirim...' : 'Stop conveyor'}
+              </span>
+              <span className="mt-0.5 block text-[10px] text-white/50">Hentikan sementara</span>
+            </span>
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] pt-3.5 text-[11px] text-white/50">
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="power" size={13} className="text-[#cbd2b3]" />
+            <span>Otomatis langsung menyala saat daya ESP32 hidup</span>
+          </span>
+
+          {compact && onOpenDetails ? (
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-white/75 transition-colors hover:text-white"
+            >
+              Detail perangkat <Icon name="arrow-right" size={13} />
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              {iot.lastCommand && (
+                <span className="font-mono text-[10px] text-white/45">
+                  Terakhir: {iot.lastCommand.command}
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={pendingCommand !== null}
+                onClick={() => onCommand('RESET')}
+                className="cursor-pointer inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/75 transition-colors hover:bg-white/10 disabled:opacity-50"
+              >
+                <Icon name="refresh" size={11} />
+                {pendingCommand === 'RESET' ? 'Mereset...' : 'Reset hitungan'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MetricCard({ label, value, unit, icon, detail }: { label: string; value: string; unit: string; icon: 'boxes' | 'activity' | 'bag' | 'sparkle'; detail: string }) {
   return (
     <article className="admin-metric liquid-glass-strong flex flex-col rounded-[1.2rem] p-4 sm:p-5">
       <div className="flex items-start justify-between gap-2"><p className="max-w-[13rem] text-[11px] leading-snug text-white/65 sm:text-xs">{label}</p><span className="liquid-glass flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/80"><Icon name={icon} size={17} /></span></div>
-      <p className="mt-auto pt-5 font-heading text-4xl italic leading-none sm:text-5xl">{value}<span className="ml-2 font-body text-xs not-italic text-white/55">{unit}</span></p>
+      <p className="mt-auto pt-5 font-heading text-4xl italic leading-none tabular-nums sm:text-5xl">{value}<span className="ml-2 font-body text-xs not-italic text-white/55">{unit}</span></p>
       <p className="mt-2 text-[10px] text-white/50">{detail}</p>
     </article>
   );
@@ -405,9 +631,9 @@ function InventoryTable({ stocks, onChange, compact = false }: { stocks: Record<
             return (
               <tr key={product.id} className="border-b border-white/[.06] last:border-0">
                 <td className="py-4 pr-3"><div className="flex items-center gap-3"><span className="liquid-glass flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"><Icon name="egg" size={18} /></span><span><span className="block text-xs font-medium text-white/90">{product.name}</span><span className="mt-1 block text-[9px] tracking-[.1em] text-white/40">{product.code} · {product.category}</span></span></div></td>
-                <td className="py-4 pr-3"><span className="font-heading text-2xl italic">{formatCount(stock)}</span><span className="ml-1 text-[10px] text-white/40">butir</span></td>
+                <td className="py-4 pr-3"><span className="font-heading text-2xl italic tabular-nums">{formatCount(stock)}</span><span className="ml-1 text-[10px] text-white/40">butir</span></td>
                 <td className="py-4 pr-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[9px] ${stock === 0 ? 'bg-red-300/10 text-red-100/80' : low ? 'bg-amber-200/10 text-amber-100/80' : 'bg-emerald-200/[.08] text-emerald-100/75'}`}><span className={`h-1.5 w-1.5 rounded-full ${stock === 0 ? 'bg-red-300' : low ? 'bg-amber-300' : 'bg-emerald-300'}`} />{stock === 0 ? 'Habis' : low ? 'Stok menipis' : 'Tersedia'}</span></td>
-                <td className="py-4 text-right"><div className="inline-flex items-center gap-1.5"><button type="button" aria-label={`Kurangi ${product.name} satu butir`} onClick={() => onChange(product.id, -1, 'manual', 'Penyesuaian stok manual')} className="liquid-glass flex h-10 w-10 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10"><Icon name="minus" size={14} /></button><button type="button" aria-label={`Tambah ${product.name} satu butir`} onClick={() => onChange(product.id, 1, 'manual', 'Penyesuaian stok manual')} className="liquid-glass flex h-10 w-10 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10"><Icon name="plus" size={14} /></button></div></td>
+                <td className="py-4 text-right"><div className="inline-flex items-center gap-1.5"><button type="button" aria-label={`Kurangi ${product.name} satu butir`} onClick={() => onChange(product.id, -1, 'manual', 'Penyesuaian stok manual')} className="liquid-glass cursor-pointer flex h-10 w-10 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10"><Icon name="minus" size={14} /></button><button type="button" aria-label={`Tambah ${product.name} satu butir`} onClick={() => onChange(product.id, 1, 'manual', 'Penyesuaian stok manual')} className="liquid-glass cursor-pointer flex h-10 w-10 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10"><Icon name="plus" size={14} /></button></div></td>
               </tr>
             );
           })}
