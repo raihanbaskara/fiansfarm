@@ -158,69 +158,87 @@ export type ConveyorCommandResult = {
 };
 
 export async function sendConveyorCommand(command: ConveyorCommand): Promise<ConveyorCommandResult> {
-  const urls = [
+  for (const baseUrl of [
     'http://127.0.0.1:1880/api/conveyor/motor',
     'http://localhost:1880/api/conveyor/motor',
-  ];
-
-  for (const url of urls) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(url, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ command }),
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const json = await res.json();
-        const nextRunning =
-          typeof json?.motor_running === 'boolean'
-            ? json.motor_running
-            : command === 'START'
-              ? true
-              : command === 'STOP'
-                ? false
-                : cachedStatus.motorRunning;
-
-        cachedStatus = {
-          ...cachedStatus,
-          isNodeRedConnected: true,
-          motorRunning: nextRunning,
-          count: command === 'RESET' ? 0 : cachedStatus.count,
-          lastCommand: {
-            command,
-            at: json?.waktu || new Date().toISOString(),
+  ]) {
+    // Gunakan text/plain agar browser mengirim simple POST tanpa preflight OPTIONS, lalu fallback ke simple GET
+    const attempts: Array<{ url: string; init: RequestInit }> = [
+      {
+        url: baseUrl,
+        init: {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8',
+            Accept: 'application/json',
           },
-          error: null,
-        };
-        window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
-        window.setTimeout(() => {
-          fetchConveyorStock();
-        }, 450);
+          body: JSON.stringify({ command }),
+        },
+      },
+      {
+        url: `${baseUrl}?cmd=${encodeURIComponent(command)}&_t=${Date.now()}`,
+        init: {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        },
+      },
+    ];
 
-        const label =
-          command === 'START'
-            ? 'Perintah START dikirim: conveyor dijalankan.'
-            : command === 'STOP'
-              ? 'Perintah STOP dikirim: conveyor dihentikan sementara.'
-              : 'Hitungan conveyor direset ke 0 butir.';
+    for (const attempt of attempts) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch(attempt.url, {
+          ...attempt.init,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-        return {
-          ok: true,
-          command,
-          motorRunning: nextRunning,
-          message: label,
-        };
+        if (res.ok) {
+          const json = await res.json();
+          const nextRunning =
+            typeof json?.motor_running === 'boolean'
+              ? json.motor_running
+              : command === 'START'
+                ? true
+                : command === 'STOP'
+                  ? false
+                  : cachedStatus.motorRunning;
+
+          cachedStatus = {
+            ...cachedStatus,
+            isNodeRedConnected: true,
+            motorRunning: nextRunning,
+            count: command === 'RESET' ? 0 : cachedStatus.count,
+            lastCommand: {
+              command,
+              at: json?.waktu || new Date().toISOString(),
+            },
+            error: null,
+          };
+          window.dispatchEvent(new CustomEvent(iotUpdateEvent, { detail: cachedStatus }));
+          window.setTimeout(() => {
+            fetchConveyorStock();
+          }, 450);
+
+          const label =
+            command === 'START'
+              ? 'Perintah START dikirim: conveyor dijalankan.'
+              : command === 'STOP'
+                ? 'Perintah STOP dikirim: conveyor dihentikan sementara.'
+                : 'Hitungan conveyor direset ke 0 butir.';
+
+          return {
+            ok: true,
+            command,
+            motorRunning: nextRunning,
+            message: label,
+          };
+        }
+      } catch {
+        // Lanjut ke metode/URL berikutnya
       }
-    } catch {
-      // Coba URL berikutnya
     }
   }
 

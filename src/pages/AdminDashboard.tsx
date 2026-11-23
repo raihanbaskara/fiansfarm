@@ -470,8 +470,12 @@ function ConveyorMotorConsole({
   onOpenDetails?: () => void;
   compact?: boolean;
 }) {
-  const isRunning = iot.isEspOnline ? iot.motorRunning : iot.isNodeRedConnected ? iot.motorRunning : false;
-  const isPaused = (iot.isEspOnline || iot.isNodeRedConnected) && !isRunning;
+  const isRunning = iot.isEspOnline
+    ? iot.motorRunning
+    : iot.isNodeRedConnected && iot.lastCommand?.command === 'START';
+  const isPaused = iot.isEspOnline
+    ? !iot.motorRunning
+    : iot.isNodeRedConnected && iot.lastCommand?.command === 'STOP';
 
   const badgeTone = isRunning
     ? 'border-emerald-400/25 bg-emerald-400/[0.1] text-emerald-200'
